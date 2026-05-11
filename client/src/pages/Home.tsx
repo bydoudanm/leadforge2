@@ -1,25 +1,48 @@
-import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
-import { Streamdown } from 'streamdown';
+import Header from '@/components/Header';
+import Hero from '@/components/Hero';
+import LiveIntelligence from '@/components/LiveIntelligence';
+import Features from '@/components/Features';
+import HowItWorks from '@/components/HowItWorks';
+import DashboardPreview from '@/components/DashboardPreview';
+import Pricing from '@/components/Pricing';
+import FAQ from '@/components/FAQ';
+import FinalCTA from '@/components/FinalCTA';
+import Footer from '@/components/Footer';
 
 /**
- * All content in this page are only for example, replace with your own feature implementation
- * When building pages, remember your instructions in Frontend Best Practices, Design Guide and Common Pitfalls
+ * LeadForge Landing Page
+ * 
+ * Design Philosophy: Neo-Futurism with AI Intelligence
+ * - Dark, sophisticated aesthetic with blue AI accents
+ * - Smooth, flowing animations that feel intelligent
+ * - Premium card-based layouts with depth
+ * - Asymmetric, dynamic layouts
+ * 
+ * Color Scheme:
+ * - Background: Deep dark (#0f1419)
+ * - Accents: Vibrant blue (#3b82f6) and cyan (#0ea5e9)
+ * - Cards: Slate-900 with transparency
+ * - Text: Light slate for contrast
  */
-export default function Home() {
-  // If theme is switchable in App.tsx, we can implement theme toggling like this:
-  // const { theme, toggleTheme } = useTheme();
 
+export default function Home() {
   return (
-    <div className="min-h-screen flex flex-col">
-      <main>
-        {/* Example: lucide-react for icons */}
-        <Loader2 className="animate-spin" />
-        Example Page
-        {/* Example: Streamdown for markdown rendering */}
-        <Streamdown>Any **markdown** content</Streamdown>
-        <Button variant="default">Example Button</Button>
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
+      <Header />
+      
+      {/* Main Content */}
+      <main className="pt-16">
+        <Hero />
+        <LiveIntelligence />
+        <Features />
+        <HowItWorks />
+        <DashboardPreview />
+        <Pricing />
+        <FAQ />
+        <FinalCTA />
       </main>
+
+      <Footer />
     </div>
   );
 }
