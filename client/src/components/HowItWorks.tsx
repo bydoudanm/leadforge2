@@ -18,8 +18,8 @@ const steps = [
   },
   {
     number: '03',
-    title: 'Close & Get Paid',
-    description: 'Automate follow-ups, track deals, and close more clients. Turn leads into revenue with minimal manual work.',
+    title: 'Close Clients & Get Paid',
+    description: 'Turn conversations into real clients and paying customers. LeadForge automates follow-ups and helps you move from outreach to closed deals and revenue.',
     icon: TrendingUp,
     color: 'from-green-500 to-emerald-500',
   },
