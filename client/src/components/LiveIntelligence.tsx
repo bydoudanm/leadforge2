@@ -52,12 +52,12 @@ export default function LiveIntelligence() {
           </div>
           
           <h2 className="text-4xl md:text-5xl font-bold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            Real-Time Lead
+            Real-Time Client
             <br />
-            <span className="text-gradient">Intelligence</span>
+            <span className="text-gradient">Opportunities</span>
           </h2>
           <p className="text-xl text-slate-400 max-w-2xl mx-auto">
-            See live data from our AI discovering opportunities across the globe
+            Watch as our AI discovers your next paying clients in real-time
           </p>
         </motion.div>
 

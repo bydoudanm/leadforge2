@@ -49,9 +49,9 @@ export default function Hero() {
             className="text-5xl md:text-7xl font-bold mb-6 leading-tight"
             style={{ fontFamily: 'Space Grotesk, sans-serif' }}
           >
-            <span className="text-white">Find businesses</span>
+            <span className="text-white">Find, contact, and close</span>
             <br />
-            <span className="text-gradient">with no website</span>
+            <span className="text-gradient">businesses that need your services — automatically.</span>
           </motion.h1>
 
           <motion.p
@@ -60,7 +60,7 @@ export default function Hero() {
             transition={{ delay: 0.3, duration: 0.8 }}
             className="text-xl text-slate-300 mb-8 max-w-2xl mx-auto"
           >
-            Reach clients already looking for your service. LeadForge uses AI to discover businesses that need your expertise.
+            LeadForge is an AI-powered system that discovers high-intent leads, reaches out to them, and helps you convert them into paying clients.
           </motion.p>
 
           <motion.div

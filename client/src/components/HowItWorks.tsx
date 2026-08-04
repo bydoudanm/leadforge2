@@ -4,22 +4,22 @@ import { Search, Zap, TrendingUp, ArrowRight } from 'lucide-react';
 const steps = [
   {
     number: '01',
-    title: 'Discover Leads',
-    description: 'Our AI scans millions of businesses to find those matching your ideal customer profile. Identify opportunities others miss.',
+    title: 'Discover High-Intent Leads',
+    description: 'Our AI finds businesses actively losing customers online. These are your next paying clients—ready to buy what you’re selling.',
     icon: Search,
     color: 'from-blue-500 to-cyan-500',
   },
   {
     number: '02',
-    title: 'Generate AI Outreach',
-    description: 'Create personalized, compelling outreach emails in seconds. Our AI learns your style and generates messages that convert.',
+    title: 'Reach Out Automatically',
+    description: 'AI generates personalized emails and sends them automatically. Get responses and build momentum without lifting a finger.',
     icon: Zap,
     color: 'from-purple-500 to-pink-500',
   },
   {
     number: '03',
-    title: 'Convert Clients',
-    description: 'Automate follow-ups, track engagement, and close deals faster. Let AI handle the repetitive work while you focus on relationships.',
+    title: 'Close & Get Paid',
+    description: 'Automate follow-ups, track deals, and close more clients. Turn leads into revenue with minimal manual work.',
     icon: TrendingUp,
     color: 'from-green-500 to-emerald-500',
   },
@@ -40,10 +40,12 @@ export default function HowItWorks() {
           className="text-center mb-16"
         >
           <h2 className="text-4xl md:text-5xl font-bold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            How It Works
+            From Lead to Client
+            <br />
+            <span className="text-gradient">in 3 Steps</span>
           </h2>
           <p className="text-xl text-slate-400">
-            Three simple steps to find and convert your ideal clients
+            Your complete client acquisition workflow, automated
           </p>
         </motion.div>
 

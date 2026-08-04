@@ -4,19 +4,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 const dashboardTabs = [
   {
     name: 'Dashboard',
-    description: 'Real-time overview of your lead generation performance',
+    description: 'Real-time overview of your client acquisition performance and revenue',
   },
   {
     name: 'Leads',
-    description: 'Manage and track all discovered leads',
+    description: 'Track high-intent prospects and move them through your sales pipeline',
   },
   {
     name: 'Campaigns',
-    description: 'Create and monitor outreach campaigns',
+    description: 'Launch automated client acquisition campaigns that close deals',
   },
   {
     name: 'Analytics',
-    description: 'Detailed insights and performance metrics',
+    description: 'Track revenue, ROI, and client acquisition cost for every campaign',
   },
 ];
 
@@ -35,12 +35,12 @@ export default function DashboardPreview() {
           className="text-center mb-12"
         >
           <h2 className="text-4xl md:text-5xl font-bold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            Intelligent Dashboard
+            Your Client Acquisition
             <br />
-            <span className="text-gradient">Built for Performance</span>
+            <span className="text-gradient">Command Center</span>
           </h2>
           <p className="text-xl text-slate-400 max-w-2xl mx-auto">
-            Everything you need to manage leads, campaigns, and conversions in one beautiful interface.
+            Manage leads, campaigns, and revenue in one powerful interface. Turn prospects into paying clients.
           </p>
         </motion.div>
 

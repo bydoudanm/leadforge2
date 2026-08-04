@@ -5,73 +5,73 @@ const features = [
   {
     icon: Search,
     title: 'AI Lead Discovery',
-    description: 'Intelligent algorithms find high-potential leads matching your ideal customer profile.',
+    description: 'Find high-intent businesses ready to become your next paying clients.',
     color: 'from-blue-500 to-cyan-500',
   },
   {
     icon: TrendingUp,
     title: 'No Website Detection',
-    description: 'Identify businesses without online presence—your perfect prospects.',
+    description: 'Identify businesses losing customers online—your ideal sales targets.',
     color: 'from-purple-500 to-pink-500',
   },
   {
     icon: BarChart3,
     title: 'Weak SEO Detection',
-    description: 'Find businesses struggling with search visibility and ready for your services.',
+    description: 'Discover businesses actively losing revenue to poor online visibility.',
     color: 'from-orange-500 to-red-500',
   },
   {
     icon: Mail,
     title: 'AI Outreach Generation',
-    description: 'Generate personalized, compelling outreach emails powered by advanced AI.',
+    description: 'Generate personalized emails that get responses and turn prospects into clients.',
     color: 'from-green-500 to-emerald-500',
   },
   {
     icon: Zap,
     title: 'Email Automation',
-    description: 'Automate your entire outreach workflow with intelligent sequencing.',
+    description: 'Automatically reach out and convert leads into paying customers at scale.',
     color: 'from-yellow-500 to-orange-500',
   },
   {
     icon: Repeat2,
     title: 'Multi-Inbox Sending',
-    description: 'Send from multiple email accounts simultaneously for maximum reach.',
+    description: 'Scale your client acquisition engine across multiple accounts safely.',
     color: 'from-indigo-500 to-blue-500',
   },
   {
     icon: Target,
     title: 'Smart Lead Scoring',
-    description: 'AI-powered scoring helps you prioritize the most valuable leads.',
+    description: 'Focus on the highest-probability leads to close more deals faster.',
     color: 'from-rose-500 to-pink-500',
   },
   {
     icon: Bell,
     title: 'Live Monitoring',
-    description: 'Real-time alerts keep you updated on lead activity and engagement.',
+    description: 'Real-time alerts on prospect engagement to strike while interest is hot.',
     color: 'from-cyan-500 to-blue-500',
   },
   {
     icon: MessageSquare,
     title: 'Auto Follow-up',
-    description: 'Intelligent follow-up sequences that convert interested prospects.',
+    description: 'Intelligent follow-up sequences that turn interested prospects into paying clients.',
     color: 'from-violet-500 to-purple-500',
   },
   {
     icon: Sparkles,
     title: 'AI Reply Assistant',
-    description: 'Get AI-suggested responses to prospect replies in real-time.',
+    description: 'Respond to prospects instantly and close deals faster with AI suggestions.',
     color: 'from-amber-500 to-yellow-500',
   },
   {
     icon: Layers,
     title: 'Campaign Automation',
-    description: 'Build complex multi-step campaigns without manual intervention.',
+    description: 'Run complete client acquisition campaigns on autopilot from discovery to close.',
     color: 'from-lime-500 to-green-500',
   },
   {
     icon: Gauge,
-    title: 'Landing Page Generator',
-    description: 'Create high-converting landing pages with AI-optimized copy.',
+    title: 'Performance Analytics',
+    description: 'Track revenue, ROI, and client acquisition cost for every campaign.',
     color: 'from-fuchsia-500 to-purple-500',
   },
 ];
@@ -111,12 +111,12 @@ export default function Features() {
           className="text-center mb-16"
         >
           <h2 className="text-4xl md:text-5xl font-bold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            Powerful Features
+            Your AI Client
             <br />
-            <span className="text-gradient">Built for Growth</span>
+            <span className="text-gradient">Acquisition Engine</span>
           </h2>
           <p className="text-xl text-slate-400 max-w-2xl mx-auto">
-            Everything you need to find, reach, and convert your ideal clients at scale.
+            Everything you need to discover leads, reach them automatically, and turn them into paying clients.
           </p>
         </motion.div>
 

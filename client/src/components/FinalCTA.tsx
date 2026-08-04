@@ -38,9 +38,9 @@ export default function FinalCTA() {
             className="text-5xl md:text-6xl font-bold mb-6 leading-tight"
             style={{ fontFamily: 'Space Grotesk, sans-serif' }}
           >
-            Your next client is
+            Stop hunting for leads.
             <br />
-            <span className="text-gradient">already searching for help</span>
+            <span className="text-gradient">Start closing clients.</span>
           </motion.h2>
 
           <motion.p
@@ -50,7 +50,7 @@ export default function FinalCTA() {
             viewport={{ once: true }}
             className="text-xl text-slate-300 mb-8 max-w-2xl mx-auto"
           >
-            Stop guessing who needs your services. LeadForge finds them for you, automatically generates outreach, and helps you close deals faster.
+            LeadForge is your AI client acquisition system. Discover high-intent prospects, reach them automatically, and convert them into paying clients—all in one platform.
           </motion.p>
 
           <motion.div
@@ -64,7 +64,7 @@ export default function FinalCTA() {
               size="lg"
               className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-lg font-semibold rounded-lg"
             >
-              Start Finding Leads
+              Start Getting Clients
               <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
             <Button
@@ -91,8 +91,8 @@ export default function FinalCTA() {
                 <div className="text-sm text-slate-400">Active Users</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-white">2M+</div>
-                <div className="text-sm text-slate-400">Leads Discovered</div>
+                <div className="text-2xl font-bold text-white">420K+</div>
+                <div className="text-sm text-slate-400">Clients Acquired</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-white">$500M+</div>

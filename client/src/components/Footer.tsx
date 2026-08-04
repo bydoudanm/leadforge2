@@ -49,7 +49,7 @@ export default function Footer() {
               </span>
             </div>
             <p className="text-slate-400 text-sm">
-              AI-powered lead generation for professionals who want to grow faster.
+              Your AI client acquisition system. Turn leads into paying clients automatically.
             </p>
           </div>
 
