@@ -14,3 +14,5 @@
 
 - 2026-08-12: Selecting Gaza loaded the dependent City selector with Al-Zahra and Gaza City.
 - Typing `bl` in the blank Business Type field surfaced the visible suggestion `Did you mean Plumber?`, confirming free-text autocomplete behavior.
+
+- 2026-08-12: Authenticated browser verification of the original `/lead-search` route succeeded after the navigation update. The original Lead Search controls, results, and outreach preview still render, and the sidebar now shows `Lead Search` followed by a separate `Company Lead Search` entry.

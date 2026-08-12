@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import { Login, Signup } from "./pages/Auth";
 import ProfileSettings from "./pages/ProfileSettings";
 import LeadSearch from "./pages/LeadSearch";
+import CompanyLeadSearch from "./pages/CompanyLeadSearch";
 
 
 function Router() {
@@ -20,6 +21,7 @@ function Router() {
       <Route path={"/dashboard"} component={Dashboard} />
       <Route path={"/settings"} component={ProfileSettings} />
       <Route path={"/lead-search"} component={LeadSearch} />
+      <Route path={"/company-lead-search"} component={CompanyLeadSearch} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

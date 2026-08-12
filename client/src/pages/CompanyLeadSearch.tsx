@@ -298,7 +298,7 @@ function scoreClass(score: number) {
   return "bg-orange-500/20 text-orange-300 border-orange-400/30";
 }
 
-export default function LeadSearch() {
+export default function CompanyLeadSearch() {
   const [, setLocation] = useLocation();
   const [user, setUser] = useState<User | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -470,8 +470,8 @@ export default function LeadSearch() {
         <aside className={`${sidebarOpen ? "w-56" : "w-16"} hidden md:flex shrink-0 bg-[#06101c] border-r border-slate-800/80 flex-col transition-all`}>
           <div className="p-3 border-b border-slate-800/80"><button onClick={() => setSidebarOpen((open) => !open)} className="w-full flex items-center justify-center py-2 rounded-lg hover:bg-slate-800/70 text-slate-400"><Menu className="w-4 h-4" />{sidebarOpen && <span className="ml-2 text-xs">Collapse</span>}</button></div>
           <nav className="flex-1 p-3 space-y-1">
-            <SideItem icon={Search} label="Lead Search" active expanded={sidebarOpen} onClick={() => setLocation('/lead-search')} />
-            <SideItem icon={Building2} label="Company Lead Search" expanded={sidebarOpen} onClick={() => setLocation('/company-lead-search')} />
+            <SideItem icon={Search} label="Lead Search" expanded={sidebarOpen} onClick={() => setLocation('/lead-search')} />
+            <SideItem icon={Building2} label="Company Lead Search" active expanded={sidebarOpen} onClick={() => setLocation('/company-lead-search')} />
             <SideItem icon={Users} label="Leads" expanded={sidebarOpen} onClick={() => setLocation('/dashboard')} />
             <SideItem icon={Target} label="Opportunities" expanded={sidebarOpen} />
             <SideItem icon={Mail} label="Outreach" expanded={sidebarOpen} />

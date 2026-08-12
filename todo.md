@@ -46,3 +46,7 @@
 - [x] Integrate complete dependent cities for each administrative division
 - [x] Implement free-text business type input with live autocomplete suggestions
 - [x] Run typecheck, tests, and build, then save a checkpoint for comprehensive global location and business search
+
+- [x] Create `CompanyLeadSearch.tsx` as an independent copy of `LeadSearch.tsx`
+- [x] Add `/company-lead-search` route in `App.tsx` and sidebar navigation item
+- [x] Run typecheck, tests, and build, then save a checkpoint for Company Lead Search
