@@ -1,9 +1,18 @@
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, CheckCircle2, KeyRound, LayoutDashboard, LogOut, Menu, Save, Settings, UserRound } from "lucide-react";
+import { ArrowLeft, BellRing, CheckCircle2, KeyRound, LayoutDashboard, LogOut, Menu, Save, Settings, UserRound } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { useLocation } from "wouter";
 
-type User = { id: number; name: string | null; email: string; plan: string };
+type User = {
+  id: number;
+  name: string | null;
+  email: string;
+  plan: string;
+  emailAlertsEnabled: boolean;
+  campaignAlertsEnabled: boolean;
+  weeklyReportsEnabled: boolean;
+  productUpdatesEnabled: boolean;
+};
 
 type ApiError = Error & { status?: number };
 
@@ -33,8 +42,16 @@ export default function ProfileSettings() {
   const [loading, setLoading] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
+  const [savingNotifications, setSavingNotifications] = useState(false);
   const [profileMessage, setProfileMessage] = useState("");
   const [passwordMessage, setPasswordMessage] = useState("");
+  const [notificationMessage, setNotificationMessage] = useState("");
+  const [notifications, setNotifications] = useState({
+    emailAlertsEnabled: true,
+    campaignAlertsEnabled: true,
+    weeklyReportsEnabled: true,
+    productUpdatesEnabled: false,
+  });
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -45,6 +62,12 @@ export default function ProfileSettings() {
         setUser(nextUser);
         setName(nextUser.name ?? "");
         setEmail(nextUser.email);
+        setNotifications({
+          emailAlertsEnabled: nextUser.emailAlertsEnabled,
+          campaignAlertsEnabled: nextUser.campaignAlertsEnabled,
+          weeklyReportsEnabled: nextUser.weeklyReportsEnabled,
+          productUpdatesEnabled: nextUser.productUpdatesEnabled,
+        });
       })
       .catch((requestError: unknown) => {
         if (!active) return;
@@ -85,6 +108,30 @@ export default function ProfileSettings() {
       setProfileMessage(message.startsWith("409:") ? "That email is already in use." : "Unable to save account details.");
     } finally {
       setSavingProfile(false);
+    }
+  };
+
+  const handleNotificationSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSavingNotifications(true);
+    setNotificationMessage("");
+    try {
+      const updatedUser = await api<User>("/api/profile/notifications", {
+        method: "PATCH",
+        body: JSON.stringify(notifications),
+      });
+      setUser(updatedUser);
+      setNotifications({
+        emailAlertsEnabled: updatedUser.emailAlertsEnabled,
+        campaignAlertsEnabled: updatedUser.campaignAlertsEnabled,
+        weeklyReportsEnabled: updatedUser.weeklyReportsEnabled,
+        productUpdatesEnabled: updatedUser.productUpdatesEnabled,
+      });
+      setNotificationMessage("Notification preferences saved.");
+    } catch {
+      setNotificationMessage("Unable to save notification preferences.");
+    } finally {
+      setSavingNotifications(false);
     }
   };
 
@@ -152,6 +199,17 @@ export default function ProfileSettings() {
               <label className="block"><span className="block text-sm text-slate-300 mb-2">Full name</span><input required value={name} onChange={(event) => setName(event.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-4 py-3 text-white outline-none focus:border-blue-500" /></label>
               <label className="block"><span className="block text-sm text-slate-300 mb-2">Email address</span><input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-4 py-3 text-white outline-none focus:border-blue-500" /></label>
               <div className="flex items-center gap-4"><Button disabled={savingProfile} className="bg-blue-600 hover:bg-blue-500 text-white flex items-center gap-2"><Save className="w-4 h-4" />{savingProfile ? "Saving…" : "Save changes"}</Button>{profileMessage && <span className={`text-sm flex items-center gap-2 ${profileMessage.includes("saved") ? "text-emerald-400" : "text-amber-300"}`}>{profileMessage.includes("saved") && <CheckCircle2 className="w-4 h-4" />}{profileMessage}</span>}</div>
+            </form>
+          </section>
+
+          <section className="bg-slate-900/50 border border-slate-700/50 rounded-xl p-6">
+            <div className="flex items-start gap-4 mb-6"><div className="w-11 h-11 rounded-xl bg-cyan-500/20 grid place-items-center"><BellRing className="w-5 h-5 text-cyan-400" /></div><div><h2 className="text-lg font-semibold text-white">Email notifications</h2><p className="text-sm text-slate-400 mt-1">Choose which email alerts you want to receive from LeadForge.</p></div></div>
+            <form onSubmit={handleNotificationSubmit} className="space-y-1 max-w-2xl">
+              <label className="flex items-start justify-between gap-6 rounded-lg px-4 py-4 hover:bg-slate-800/60 cursor-pointer"><span><span className="block text-sm font-medium text-slate-200">Account and security alerts</span><span className="block text-xs text-slate-500 mt-1">Important sign-in, password, and account activity notifications.</span></span><input type="checkbox" checked={notifications.emailAlertsEnabled} onChange={(event) => setNotifications((current) => ({ ...current, emailAlertsEnabled: event.target.checked }))} className="mt-1 h-4 w-4 accent-cyan-500" /></label>
+              <label className="flex items-start justify-between gap-6 rounded-lg px-4 py-4 hover:bg-slate-800/60 cursor-pointer"><span><span className="block text-sm font-medium text-slate-200">Campaign activity</span><span className="block text-xs text-slate-500 mt-1">Updates about replies, campaign performance, and deliverability.</span></span><input type="checkbox" checked={notifications.campaignAlertsEnabled} onChange={(event) => setNotifications((current) => ({ ...current, campaignAlertsEnabled: event.target.checked }))} className="mt-1 h-4 w-4 accent-cyan-500" /></label>
+              <label className="flex items-start justify-between gap-6 rounded-lg px-4 py-4 hover:bg-slate-800/60 cursor-pointer"><span><span className="block text-sm font-medium text-slate-200">Weekly performance reports</span><span className="block text-xs text-slate-500 mt-1">A weekly summary of leads, outreach, conversions, and revenue.</span></span><input type="checkbox" checked={notifications.weeklyReportsEnabled} onChange={(event) => setNotifications((current) => ({ ...current, weeklyReportsEnabled: event.target.checked }))} className="mt-1 h-4 w-4 accent-cyan-500" /></label>
+              <label className="flex items-start justify-between gap-6 rounded-lg px-4 py-4 hover:bg-slate-800/60 cursor-pointer"><span><span className="block text-sm font-medium text-slate-200">Product updates</span><span className="block text-xs text-slate-500 mt-1">Occasional news about new LeadForge features and improvements.</span></span><input type="checkbox" checked={notifications.productUpdatesEnabled} onChange={(event) => setNotifications((current) => ({ ...current, productUpdatesEnabled: event.target.checked }))} className="mt-1 h-4 w-4 accent-cyan-500" /></label>
+              <div className="flex items-center gap-4 pt-4"><Button disabled={savingNotifications} className="bg-cyan-600 hover:bg-cyan-500 text-white flex items-center gap-2"><Save className="w-4 h-4" />{savingNotifications ? "Saving…" : "Save notification settings"}</Button>{notificationMessage && <span className={`text-sm flex items-center gap-2 ${notificationMessage.includes("saved") ? "text-emerald-400" : "text-amber-300"}`}>{notificationMessage.includes("saved") && <CheckCircle2 className="w-4 h-4" />}{notificationMessage}</span>}</div>
             </form>
           </section>
 

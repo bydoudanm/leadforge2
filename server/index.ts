@@ -23,7 +23,16 @@ function parseCookies(request: Request) {
 }
 
 function publicUser(user: NonNullable<Awaited<ReturnType<typeof getRequestUser>>>) {
-  return { id: user.id, name: user.name, email: user.email, plan: user.plan };
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    plan: user.plan,
+    emailAlertsEnabled: user.emailAlertsEnabled,
+    campaignAlertsEnabled: user.campaignAlertsEnabled,
+    weeklyReportsEnabled: user.weeklyReportsEnabled,
+    productUpdatesEnabled: user.productUpdatesEnabled,
+  };
 }
 
 async function requireUser(request: AuthedRequest, response: Response, next: NextFunction) {
@@ -199,6 +208,28 @@ export async function createApp() {
         return;
       }
       const user = await db.updateUserProfile(request.user!.id, parsed.data);
+      if (!user) {
+        response.status(404).json({ error: "User account not found" });
+        return;
+      }
+      response.json(publicUser(user));
+    } catch (error) {
+      safeError(response, error);
+    }
+  });
+  profileApi.patch("/notifications", async (request: AuthedRequest, response) => {
+    const parsed = z.object({
+      emailAlertsEnabled: z.boolean(),
+      campaignAlertsEnabled: z.boolean(),
+      weeklyReportsEnabled: z.boolean(),
+      productUpdatesEnabled: z.boolean(),
+    }).safeParse(request.body);
+    if (!parsed.success) {
+      response.status(400).json({ error: "Notification preferences must be boolean values" });
+      return;
+    }
+    try {
+      const user = await db.updateNotificationPreferences(request.user!.id, parsed.data);
       if (!user) {
         response.status(404).json({ error: "User account not found" });
         return;

@@ -59,6 +59,20 @@ export async function updateUserPassword(userId: number, passwordHash: string) {
     .where(eq(schema.users.id, userId));
 }
 
+export type NotificationPreferences = {
+  emailAlertsEnabled: boolean;
+  campaignAlertsEnabled: boolean;
+  weeklyReportsEnabled: boolean;
+  productUpdatesEnabled: boolean;
+};
+
+export async function updateNotificationPreferences(userId: number, input: NotificationPreferences) {
+  const database = await getDb();
+  if (!database) throw new Error("Database is not configured");
+  await database.update(schema.users).set(input).where(eq(schema.users.id, userId));
+  return getUserById(userId);
+}
+
 export async function createUser(input: schema.InsertUser) {
   const database = await getDb();
   if (!database) throw new Error("Database is not configured");

@@ -75,6 +75,30 @@ describe("LeadForge JSON API", () => {
     expect(db.updateUserProfile).toHaveBeenCalledWith(42, { name: "Updated User", email: "updated@example.com" });
   });
 
+  it("updates authenticated notification preferences", async () => {
+    vi.spyOn(db, "getSessionByHash").mockResolvedValue({ user: { id: 42, name: "Test User", email: "test@example.com", plan: "free_trial" } } as never);
+    vi.spyOn(db, "updateNotificationPreferences").mockResolvedValue({
+      id: 42,
+      name: "Test User",
+      email: "test@example.com",
+      plan: "free_trial",
+      emailAlertsEnabled: true,
+      campaignAlertsEnabled: false,
+      weeklyReportsEnabled: true,
+      productUpdatesEnabled: false,
+    } as never);
+
+    const response = await fetch(`${baseUrl}/api/profile/notifications`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Cookie: "leadforge_session=authenticated-test" },
+      body: JSON.stringify({ emailAlertsEnabled: true, campaignAlertsEnabled: false, weeklyReportsEnabled: true, productUpdatesEnabled: false }),
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({ campaignAlertsEnabled: false, weeklyReportsEnabled: true });
+    expect(db.updateNotificationPreferences).toHaveBeenCalledWith(42, { emailAlertsEnabled: true, campaignAlertsEnabled: false, weeklyReportsEnabled: true, productUpdatesEnabled: false });
+  });
+
   it("rejects a password change when the current password is incorrect", async () => {
     vi.spyOn(db, "getSessionByHash").mockResolvedValue({ user: { id: 42, name: "Test User", email: "test@example.com", plan: "free_trial" } } as never);
     vi.spyOn(db, "getUserById").mockResolvedValue({ id: 42, passwordHash: hashPassword("correct-current-password") } as never);
