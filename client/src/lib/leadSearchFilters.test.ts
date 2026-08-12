@@ -20,12 +20,19 @@ describe("lead search result filters", () => {
     { opportunity: "Weak Website", email: "owner@example.com", ownerEmail: "owner@company.example", founderEmail: "founder@company.example", phone: "123", whatsapp: "+1 123", facebookPage: "facebook.com/company", instagram: "instagram.com/company", linkedinProfile: "linkedin.com/company/company", googleProfile: "maps.example.com", website: "example.com" },
     { opportunity: "Weak Website", email: "second@example.com", phone: "456", website: "second.com" },
     { opportunity: "Weak SEO", email: "seo@example.com", phone: "789", website: "seo.com" },
+    { opportunity: "Media Opportunity", email: "media@example.com", website: "media.example.com" },
   ];
 
   it("combines opportunity and availability filters with AND semantics", () => {
     expect(filterLeads(leads, "Weak Website", ["Email", "WhatsApp"])).toHaveLength(1);
     expect(filterLeads(leads, "Weak Website", ["Email"])).toHaveLength(2);
     expect(filterLeads(leads, "All", ["Website", "Phone"])).toHaveLength(3);
+  });
+
+  it("filters the Media Opportunity tab by the canonical opportunity value", () => {
+    expect(filterLeads(leads, "Media Opportunity", [])).toHaveLength(1);
+    expect(filterLeads(leads, "Media Opportunity", ["Email"])).toHaveLength(1);
+    expect(filterLeads(leads, "Media Opportunity", ["Phone"])).toHaveLength(0);
   });
 
   it("supports the complete canonical contact-data filter list", () => {

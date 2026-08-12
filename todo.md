@@ -71,3 +71,10 @@
 - [x] Expand results-row contact filters to all 10 business data types and remove the duplicate red filter row in LeadSearch and CompanyLeadSearch
 
 - [x] Redesign Results section so Saved Filters is compact and contact-data filters are in a dedicated wrapped container below opportunity tabs
+
+- [x] Remove duplicate contact-data columns from the Results table, place Saved Filters in the Website/Email column space, place Export and Columns in the Phone/WhatsApp/Google Profile column space, and add Media Opportunity to opportunity filters in LeadSearch and CompanyLeadSearch
+
+- [x] Move Saved Filters into the former Website/Business Email area and Export/Columns into the former Phone/WhatsApp/Google Profile area in both search pages
+- [x] Remove hidden obsolete Saved Filters markup from LeadSearch and CompanyLeadSearch
+- [x] Reverify both routes and Media Opportunity filtering after the final control relocation
+- [x] Adjust the Results control layout so Saved Filters visibly occupies the former Website/Business Email region and Export/Columns visibly occupies the former Phone/WhatsApp/Google Profile region in both search pages, then capture browser verification of the exact placement.
