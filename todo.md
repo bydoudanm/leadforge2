@@ -21,4 +21,22 @@
 - [x] Add database and API handlers for updating notification preferences
 - [x] Add notification preference toggles to the ProfileSettings page UI
 - [x] Add Vitest coverage for notification preference updates
-- [ ] Run typecheck, tests, and build, then save a final checkpoint for notification preferences
+- [x] Run typecheck, tests, and build, then save a final checkpoint for notification preferences
+
+- [x] Create the interactive Lead Search page component matching the reference design layout
+- [x] Add Search route registration in App.tsx and sidebar navigation item in Dashboard and ProfileSettings
+- [x] Verify Lead Search UI interactions, AI outreach preview, and filter state
+- [x] Run typecheck, tests, and build, then save a checkpoint for Lead Search
+
+- [ ] Verify Lead Search in an authenticated browser session, including filter toggles, results tabs, selected lead details, and AI outreach preview behavior
+- [ ] Save a new webdev checkpoint for the Lead Search feature after final verification
+
+- [x] Implement global country typeahead with empty default and full world database
+- [x] Implement automatic region/state population based on selected country
+- [x] Implement automatic city population based on selected region/state
+- [x] Run typecheck, tests, and build, then save a checkpoint for dynamic location filtering
+
+- [x] Expand the world locations dictionary with comprehensive global countries, regions, and cities
+- [x] Save a webdev checkpoint for the complete Lead Search and dynamic location filtering update
+
+- [ ] Save a webdev checkpoint for the Lead Search and dynamic location filtering update

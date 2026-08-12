@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, BellRing, CheckCircle2, KeyRound, LayoutDashboard, LogOut, Menu, Save, Settings, UserRound } from "lucide-react";
+import { ArrowLeft, BellRing, CheckCircle2, KeyRound, LayoutDashboard, LogOut, Menu, Save, Search, Settings, UserRound } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { useLocation } from "wouter";
 
@@ -181,6 +181,7 @@ export default function ProfileSettings() {
         </div>
         <nav className="flex-1 p-4 space-y-2">
           <button onClick={() => setLocation("/dashboard")} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white text-left"><LayoutDashboard className="w-5 h-5" />{sidebarOpen && <span className="text-sm font-medium">Dashboard</span>}</button>
+          <button onClick={() => setLocation("/lead-search")} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white text-left"><Search className="w-5 h-5" />{sidebarOpen && <span className="text-sm font-medium">Lead Search</span>}</button>
           <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-blue-600/20 text-blue-400 border border-blue-500/30"><Settings className="w-5 h-5" />{sidebarOpen && <span className="text-sm font-medium">Settings</span>}</div>
         </nav>
         <div className="p-4 border-t border-slate-800"><Button onClick={handleLogout} className="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center gap-2"><LogOut className="w-4 h-4" />{sidebarOpen && "Logout"}</Button></div>

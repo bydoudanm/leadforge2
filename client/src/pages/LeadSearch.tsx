@@ -1,0 +1,552 @@
+import {
+  Activity,
+  ArrowLeft,
+  BarChart3,
+  Building2,
+  CalendarDays,
+  Check,
+  ChevronDown,
+  Database,
+  Download,
+  ExternalLink,
+  Eye,
+  Facebook,
+  FileText,
+  Globe2,
+  Instagram,
+  Layers3,
+  Linkedin,
+  Mail,
+  MapPin,
+  Menu,
+  MessageCircle,
+  MoreHorizontal,
+  PanelRight,
+  Phone,
+  Search,
+  Settings,
+  ShieldCheck,
+  SlidersHorizontal,
+  Sparkles,
+  Star,
+  Target,
+  Timer,
+  UserRound,
+  Users,
+  X,
+  Zap,
+} from "lucide-react";
+import type { ComponentType, ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "wouter";
+
+type Lead = {
+  id: number;
+  company: string;
+  location: string;
+  category: string;
+  opportunity: string;
+  score: number;
+  email: string;
+  phone: string;
+  website: string;
+  reason: string;
+  service: string;
+  reviews: string;
+  accent: string;
+};
+
+type User = { id: number; name: string | null; email: string; plan: string };
+
+const worldLocations: Record<string, Record<string, string[]>> = {
+  "United States": {
+    "California": ["Los Angeles", "San Francisco", "San Diego", "San Jose", "Sacramento"],
+    "New York": ["New York City", "Buffalo", "Rochester", "Yonkers", "Syracuse"],
+    "Texas": ["Houston", "Austin", "Dallas", "San Antonio", "Fort Worth"],
+    "Florida": ["Miami", "Orlando", "Tampa", "Jacksonville", "Tallahassee"],
+    "Washington": ["Seattle", "Spokane", "Tacoma", "Bellevue", "Olympia"],
+  },
+  "France": {
+    "Île-de-France (Paris Region)": ["Paris", "Boulogne-Billancourt", "Saint-Denis", "Versailles", "Argenteuil"],
+    "Provence-Alpes-Côte d'Azur": ["Marseille", "Nice", "Toulon", "Aix-en-Provence", "Cannes"],
+    "Auvergne-Rhône-Alpes": ["Lyon", "Grenoble", "Saint-Étienne", "Villeurbanne", "Annecy"],
+    "Occitanie": ["Toulouse", "Montpellier", "Nîmes", "Perpignan", "Béziers"],
+    "Nouvelle-Aquitaine": ["Bordeaux", "Limoges", "Pau", "La Rochelle", "Bayonne"],
+  },
+  "United Kingdom": {
+    "England (Greater London)": ["London", "Westminster", "Camden", "Greenwich", "Croydon"],
+    "England (North West)": ["Manchester", "Liverpool", "Blackpool", "Bolton", "Salford"],
+    "Scotland": ["Edinburgh", "Glasgow", "Aberdeen", "Dundee", "Inverness"],
+    "Wales": ["Cardiff", "Swansea", "Newport", "Wrexham", "Barry"],
+    "Northern Ireland": ["Belfast", "Derry", "Lisburn", "Craigavon", "Newry"],
+  },
+  "Canada": {
+    "Ontario": ["Toronto", "Ottawa", "Mississauga", "Hamilton", "London"],
+    "Quebec": ["Montreal", "Quebec City", "Laval", "Gatineau", "Sherbrooke"],
+    "British Columbia": ["Vancouver", "Victoria", "Surrey", "Burnaby", "Richmond"],
+    "Alberta": ["Calgary", "Edmonton", "Red Deer", "Lethbridge", "Banff"],
+  },
+  "Germany": {
+    "Bavaria": ["Munich", "Nuremberg", "Augsburg", "Regensburg", "Würzburg"],
+    "Berlin": ["Berlin"],
+    "North Rhine-Westphalia": ["Cologne", "Düsseldorf", "Dortmund", "Essen", "Duisburg"],
+    "Baden-Württemberg": ["Stuttgart", "Mannheim", "Karlsruhe", "Freiburg", "Heidelberg"],
+  },
+  "Japan": {
+    "Tokyo Metropolis": ["Tokyo", "Shinjuku", "Shibuya", "Ginza", "Roppongi"],
+    "Osaka Prefecture": ["Osaka", "Sakai", "Higashiosaka", "Hirakata", "Toyonaka"],
+    "Kanagawa Prefecture": ["Yokohama", "Kawasaki", "Sagamihara", "Yokosuka", "Fujisawa"],
+    "Hokkaido Prefecture": ["Sapporo", "Asahikawa", "Hakodate", "Kushiro", "Obihiro"],
+  },
+  "Australia": {
+    "New South Wales": ["Sydney", "Newcastle", "Wollongong", "Parramatta", "Byron Bay"],
+    "Victoria": ["Melbourne", "Geelong", "Ballarat", "Bendigo", "Shepparton"],
+    "Queensland": ["Brisbane", "Gold Coast", "Cairns", "Townsville", "Sunshine Coast"],
+    "Western Australia": ["Perth", "Fremantle", "Bunbury", "Broome", "Albany"],
+  },
+  "Italy": {
+    "Lombardy": ["Milan", "Brescia", "Monza", "Bergamo", "Como"],
+    "Lazio": ["Rome", "Latina", "Frosinone", "Viterbo", "Rieti"],
+    "Campania": ["Naples", "Salerno", "Giugliano in Campania", "Torre del Greco", "Pozzuoli"],
+    "Veneto": ["Venice", "Verona", "Padua", "Vicenza", "Treviso"],
+  },
+  "Spain": {
+    "Community of Madrid": ["Madrid", "Móstoles", "Alcalá de Henares", "Fuenlabrada", "Leganés"],
+    "Catalonia": ["Barcelona", "L'Hospitalet de Llobregat", "Badalona", "Terrassa", "Sabadell"],
+    "Andalusia": ["Seville", "Málaga", "Cordoba", "Granada", "Jerez de la Frontera"],
+    "Valencia": ["Valencia", "Alicante", "Elche", "Castellón de la Plana", "Torrevieja"],
+  },
+  "Brazil": {
+    "São Paulo": ["São Paulo", "Guarulhos", "Campinas", "São Bernardo do Campo", "Santos"],
+    "Rio de Janeiro": ["Rio de Janeiro", "São Gonçalo", "Duque de Caxias", "Nova Iguaçu", "Niterói"],
+    "Minas Gerais": ["Belo Horizonte", "Uberlândia", "Contagem", "Juiz de Fora", "Belo Horizonte"],
+  },
+  "Mexico": {
+    "Mexico City": ["Mexico City", "Iztapalapa", "Gustavo A. Madero", "Coyoacán", "Tlalpan"],
+    "Jalisco": ["Guadalajara", "Zapopan", "Tlaquepaque", "Tonalá", "Puerto Vallarta"],
+    "Nuevo León": ["Monterrey", "San Pedro Garza García", "Apodaca", "Guadalupe", "San Nicolás de los Garza"],
+  },
+  "India": {
+    "Maharashtra": ["Mumbai", "Pune", "Nagpur", "Nashik", "Thane"],
+    "Karnataka": ["Bengaluru", "Mysuru", "Hubballi-Dharwad", "Mangaluru", "Belagavi"],
+    "Delhi": ["New Delhi", "North Delhi", "South Delhi", "East Delhi", "West Delhi"],
+    "Tamil Nadu": ["Chennai", "Coimbatore", "Madurai", "Tiruchirappalli", "Salem"],
+  },
+  "United Arab Emirates": {
+    "Dubai": ["Dubai", "Jebel Ali", "Hatta"],
+    "Abu Dhabi": ["Abu Dhabi", "Al Ain", "Madinat Zayed"],
+    "Sharjah": ["Sharjah", "Khor Fakkan", "Kalba"],
+  },
+  "Saudi Arabia": {
+    "Riyadh Province": ["Riyadh", "Al Diriyah", "Al Kharj", "Wadi ad-Dawasir"],
+    "Makkah Province": ["Mecca", "Jeddah", "Taif", "Al Qunfudhah"],
+    "Eastern Province": ["Dammam", "Khobar", "Dhahran", "Jubail", "Al Ahsa"],
+  },
+  "Singapore": {
+    "Central Region": ["Singapore", "Marina Bay", "Orchard", "Chinatown", "Sentosa"],
+    "East Region": ["Tampines", "Pasir Ris", "Changi", "Bedok"],
+    "West Region": ["Jurong East", "Jurong West", "Clementi", "Boon Lay"],
+  },
+};
+
+const allCountries = Object.keys(worldLocations).sort();
+
+const leads: Lead[] = [
+  {
+    id: 1,
+    company: "Napoli Pizza House",
+    location: "Los Angeles, CA",
+    category: "Restaurant",
+    opportunity: "Weak Website",
+    score: 92,
+    email: "napolipizzahouse@gmail.com",
+    phone: "(323) 555-0198",
+    website: "napolipizzahouse.com",
+    reason: "Website needs improvement",
+    service: "Website Creation",
+    reviews: "127 Google reviews (4.6 ★)",
+    accent: "from-orange-500 to-amber-300",
+  },
+  {
+    id: 2,
+    company: "Sushi World LA",
+    location: "Los Angeles, CA",
+    category: "Restaurant",
+    opportunity: "Weak Website",
+    score: 88,
+    email: "sushiworld.la@gmail.com",
+    phone: "(323) 555-0123",
+    website: "sushiworldla.com",
+    reason: "Slow mobile experience",
+    service: "Website Optimization",
+    reviews: "86 Google reviews (4.4 ★)",
+    accent: "from-cyan-500 to-blue-400",
+  },
+  {
+    id: 3,
+    company: "The Burger Spot",
+    location: "Los Angeles, CA",
+    category: "Restaurant",
+    opportunity: "Weak SEO",
+    score: 85,
+    email: "theburgerspot.la@gmail.com",
+    phone: "(323) 555-0145",
+    website: "theburgerspotla.com",
+    reason: "Low local search visibility",
+    service: "Local SEO",
+    reviews: "64 Google reviews (4.5 ★)",
+    accent: "from-violet-500 to-fuchsia-400",
+  },
+  {
+    id: 4,
+    company: "Taco Fiesta LA",
+    location: "Los Angeles, CA",
+    category: "Restaurant",
+    opportunity: "Weak Social Media",
+    score: 80,
+    email: "tacofiesta.la@gmail.com",
+    phone: "(323) 555-0177",
+    website: "tacofiestala.com",
+    reason: "Low social presence",
+    service: "Social Media Growth",
+    reviews: "48 Google reviews (4.3 ★)",
+    accent: "from-emerald-500 to-teal-300",
+  },
+  {
+    id: 5,
+    company: "Pasta Palace LA",
+    location: "Los Angeles, CA",
+    category: "Restaurant",
+    opportunity: "Weak Website",
+    score: 72,
+    email: "pastapalace.la@gmail.com",
+    phone: "(323) 555-0188",
+    website: "pastapalacela.com",
+    reason: "Outdated booking experience",
+    service: "Website Creation",
+    reviews: "39 Google reviews (4.2 ★)",
+    accent: "from-rose-500 to-orange-300",
+  },
+];
+
+const opportunityOptions = [
+  ["No Website", "No website", "Globe2"],
+  ["Weak Website", "Needs improvement", "PanelRight"],
+  ["Outdated Website", "Old or outdated", "FileText"],
+  ["Poor Mobile Exp.", "Not mobile-friendly", "Smartphone"],
+  ["Weak SEO", "Low rankings", "Search"],
+  ["Low Visibility", "Hard to find", "Activity"],
+  ["Weak Reviews", "No or weak reviews", "Star"],
+  ["No Booking System", "No online booking", "CalendarDays"],
+  ["No Menu Online", "No menu on website", "FileText"],
+  ["Media Opportunity", "Not in news or media", "BarChart3"],
+  ["Competitor Gap", "Competitors ahead", "Target"],
+  ["Slow Website", "Slow loading speed", "Timer"],
+  ["Security Issues", "SSL or security problems", "ShieldCheck"],
+  ["Branding Weak", "Weak brand presence", "Sparkles"],
+  ["Weak Social Media", "Low social presence", "MessageCircle"],
+] as const;
+
+const topNavItems: ReadonlyArray<readonly [string, ComponentType<{ className?: string }>, boolean]> = [
+  ["Search", Search, true],
+  ["Leads", Users, false],
+  ["Opportunities", Target, false],
+  ["Outreach", Mail, false],
+  ["Reports", BarChart3, false],
+  ["Integrations", Layers3, false],
+];
+
+const contactOptions: ReadonlyArray<readonly [string, ComponentType<{ className?: string }>, boolean]> = [
+  ["Business Email", Mail, false],
+  ["Owner / Manager Email", UserRound, false],
+  ["CEO / Founder Email", CrownIcon, true],
+  ["Phone Number", Phone, true],
+  ["WhatsApp Number", MessageCircle, false],
+  ["Facebook Page", Facebook, true],
+  ["Instagram", Instagram, true],
+  ["LinkedIn Profile", Linkedin, true],
+  ["Google Business Profile", MapPin, false],
+  ["Website", Globe2, false],
+];
+
+function CrownIcon({ className }: { className?: string }) {
+  return <span className={className}>♛</span>;
+}
+
+function api<T>(path: string) {
+  return fetch(path, { credentials: "include" }).then(async (response) => {
+    if (!response.ok) throw new Error(`${response.status}:${await response.text()}`);
+    return response.json() as Promise<T>;
+  });
+}
+
+function scoreClass(score: number) {
+  if (score >= 90) return "bg-emerald-500/20 text-emerald-300 border-emerald-400/30";
+  if (score >= 80) return "bg-amber-500/20 text-amber-300 border-amber-400/30";
+  return "bg-orange-500/20 text-orange-300 border-orange-400/30";
+}
+
+export default function LeadSearch() {
+  const [, setLocation] = useLocation();
+  const [user, setUser] = useState<User | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  
+  // Location selection state
+  const [countryInput, setCountryInput] = useState("");
+  const [selectedCountry, setSelectedCountry] = useState("");
+  const [countryDropdownOpen, setCountryDropdownOpen] = useState(false);
+  
+  const [selectedRegion, setSelectedRegion] = useState("");
+  const [selectedCity, setSelectedCity] = useState("");
+
+  const [businessType, setBusinessType] = useState("Restaurant");
+  const [selectedOpportunities, setSelectedOpportunities] = useState<string[]>(["Weak Website", "Weak Social Media"]);
+  const [selectedContacts, setSelectedContacts] = useState<string[]>(["Business Email", "Owner / Manager Email", "WhatsApp Number", "Google Business Profile", "Website"]);
+  const [selectedLeadId, setSelectedLeadId] = useState(1);
+  const [selectedTab, setSelectedTab] = useState("All");
+  const [searching, setSearching] = useState(false);
+  const [searched, setSearched] = useState(false);
+  const [outreachLanguage, setOutreachLanguage] = useState("English");
+  const [advancedFilters, setAdvancedFilters] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    api<User>("/api/auth/me")
+      .then((nextUser) => active && setUser(nextUser))
+      .catch((requestError: unknown) => {
+        if (!active) return;
+        if (requestError instanceof Error && requestError.message.startsWith("401:")) setLocation("/login");
+        else setError("Unable to load your search workspace.");
+      });
+    return () => {
+      active = false;
+    };
+  }, [setLocation]);
+
+  const filteredCountries = useMemo(() => {
+    const query = countryInput.trim().toLowerCase();
+    if (!query) return allCountries;
+    return allCountries.filter((c) => c.toLowerCase().includes(query));
+  }, [countryInput]);
+
+  const availableRegions = useMemo(() => {
+    if (!selectedCountry || !worldLocations[selectedCountry]) return [];
+    return Object.keys(worldLocations[selectedCountry]);
+  }, [selectedCountry]);
+
+  const availableCities = useMemo(() => {
+    if (!selectedCountry || !selectedRegion || !worldLocations[selectedCountry]?.[selectedRegion]) return [];
+    return worldLocations[selectedCountry][selectedRegion];
+  }, [selectedCountry, selectedRegion]);
+
+  const handleCountrySelect = (country: string) => {
+    setSelectedCountry(country);
+    setCountryInput(country);
+    setCountryDropdownOpen(false);
+    
+    // Automatically select the first region/state and city for a smooth experience
+    const regions = Object.keys(worldLocations[country] || {});
+    const firstRegion = regions[0] || "";
+    setSelectedRegion(firstRegion);
+    
+    const cities = worldLocations[country]?.[firstRegion] || [];
+    setSelectedCity(cities[0] || "");
+  };
+
+  const handleRegionChange = (region: string) => {
+    setSelectedRegion(region);
+    const cities = worldLocations[selectedCountry]?.[region] || [];
+    setSelectedCity(cities[0] || "");
+  };
+
+  const selectedLead = useMemo(() => leads.find((lead) => lead.id === selectedLeadId) ?? leads[0], [selectedLeadId]);
+  const filteredLeads = useMemo(() => {
+    if (selectedTab === "All") return leads;
+    return leads.filter((lead) => lead.opportunity === selectedTab);
+  }, [selectedTab]);
+
+  const toggle = (items: string[], value: string, setter: (value: string[]) => void) => {
+    setter(items.includes(value) ? items.filter((item) => item !== value) : [...items, value]);
+  };
+
+  const clearAll = () => {
+    setSelectedOpportunities([]);
+    setSelectedContacts([]);
+    setSelectedTab("All");
+    setCountryInput("");
+    setSelectedCountry("");
+    setSelectedRegion("");
+    setSelectedCity("");
+    setSearched(false);
+  };
+
+  const handleSearch = () => {
+    setSearching(true);
+    setTimeout(() => {
+      setSearching(false);
+      setSearched(true);
+    }, 650);
+  };
+
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+    setLocation("/");
+  };
+
+  if (error) return <div className="min-h-screen bg-[#020914] text-red-300 grid place-items-center p-6">{error}</div>;
+  if (!user) return <div className="min-h-screen bg-[#020914] text-slate-300 grid place-items-center">Loading search workspace…</div>;
+
+  return (
+    <div className="min-h-screen bg-[#020914] text-slate-200 overflow-x-hidden">
+      <header className="h-16 border-b border-slate-800/90 bg-[#050d19]/95 flex items-center justify-between px-4 lg:px-6 sticky top-0 z-30">
+        <div className="flex items-center gap-3 min-w-[185px]">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-500 grid place-items-center shadow-lg shadow-violet-950/40"><Zap className="w-5 h-5 text-white" /></div>
+          <div className="leading-tight"><div className="font-semibold text-white">LeadForge</div><div className="text-[10px] text-slate-500">AI Client Acquisition</div></div>
+        </div>
+        <nav className="hidden lg:flex items-center gap-1 h-full">
+          {topNavItems.map(([label, Icon, active]) => (
+            <button key={label as string} onClick={() => label === 'Search' ? setLocation('/lead-search') : undefined} className={`h-full px-5 text-xs font-medium border-b-2 transition-colors flex items-center gap-2 ${active ? "text-violet-300 border-violet-500" : "text-slate-400 border-transparent hover:text-white"}`}>
+              <Icon className="w-3.5 h-3.5" />{label as string}
+            </button>
+          ))}
+        </nav>
+        <div className="flex items-center gap-2">
+          <button className="hidden sm:grid place-items-center w-8 h-8 rounded-lg border border-slate-800 text-slate-400 hover:text-white"><Settings className="w-4 h-4" /></button>
+          <button className="grid place-items-center w-8 h-8 rounded-lg bg-violet-600 text-white shadow-lg shadow-violet-900/30"><Zap className="w-4 h-4" /></button>
+          <button onClick={() => setLocation('/settings')} className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full hover:bg-slate-800/80"><span className="w-7 h-7 rounded-full bg-slate-700 border border-slate-500 grid place-items-center text-[10px] font-bold">{(user.name ?? user.email).slice(0, 2).toUpperCase()}</span><span className="hidden sm:block text-xs text-slate-300">My Account</span><ChevronDown className="w-3.5 h-3.5 text-slate-500" /></button>
+        </div>
+      </header>
+
+      <div className="flex min-h-[calc(100vh-4rem)]">
+        <aside className={`${sidebarOpen ? "w-56" : "w-16"} hidden md:flex shrink-0 bg-[#06101c] border-r border-slate-800/80 flex-col transition-all`}>
+          <div className="p-3 border-b border-slate-800/80"><button onClick={() => setSidebarOpen((open) => !open)} className="w-full flex items-center justify-center py-2 rounded-lg hover:bg-slate-800/70 text-slate-400"><Menu className="w-4 h-4" />{sidebarOpen && <span className="ml-2 text-xs">Collapse</span>}</button></div>
+          <nav className="flex-1 p-3 space-y-1">
+            <SideItem icon={Search} label="Lead Search" active expanded={sidebarOpen} onClick={() => setLocation('/lead-search')} />
+            <SideItem icon={Users} label="Leads" expanded={sidebarOpen} onClick={() => setLocation('/dashboard')} />
+            <SideItem icon={Target} label="Opportunities" expanded={sidebarOpen} />
+            <SideItem icon={Mail} label="Outreach" expanded={sidebarOpen} />
+            <SideItem icon={BarChart3} label="Reports" expanded={sidebarOpen} />
+            <SideItem icon={Settings} label="Settings" expanded={sidebarOpen} onClick={() => setLocation('/settings')} />
+          </nav>
+          <div className="p-3 border-t border-slate-800/80"><button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs text-slate-500 hover:bg-slate-800 hover:text-white"><ArrowLeft className="w-4 h-4 rotate-180" />{sidebarOpen && "Logout"}</button></div>
+        </aside>
+
+        <main className="flex-1 min-w-0 p-3 lg:p-5 space-y-3">
+          <section className="rounded-xl border border-slate-800 bg-[#071321]/90 p-4 lg:p-5">
+            <SectionTitle number="1" title="Where are you looking for businesses?" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+              
+              {/* Country Typeahead Filter */}
+              <div className="relative">
+                <span className="block text-[10px] text-slate-400 mb-1.5">Country</span>
+                <div className="relative flex items-center">
+                  <Globe2 className="absolute left-3 w-4 h-4 text-slate-500 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={countryInput}
+                    placeholder="Type to search country (e.g. France)…"
+                    onChange={(event) => {
+                      setCountryInput(event.target.value);
+                      setCountryDropdownOpen(true);
+                      if (!event.target.value) {
+                        setSelectedCountry("");
+                        setSelectedRegion("");
+                        setSelectedCity("");
+                      }
+                    }}
+                    onFocus={() => setCountryDropdownOpen(true)}
+                    className="w-full rounded-lg border border-slate-700 bg-[#081724] pl-9 pr-8 py-3 text-xs text-slate-200 outline-none focus:border-violet-500"
+                  />
+                  <ChevronDown className="absolute right-3 w-4 h-4 text-slate-500 pointer-events-none" />
+                </div>
+                {countryDropdownOpen && filteredCountries.length > 0 && (
+                  <div className="absolute left-0 right-0 mt-1 max-h-52 overflow-y-auto rounded-lg border border-slate-700 bg-[#081724] shadow-xl z-20">
+                    {filteredCountries.map((country) => (
+                      <button
+                        key={country}
+                        type="button"
+                        onClick={() => handleCountrySelect(country)}
+                        className="w-full text-left px-3 py-2 text-xs text-slate-200 hover:bg-violet-600/20 hover:text-white"
+                      >
+                        {country}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* State / Region Selector (Automatic based on Country) */}
+              <SelectField
+                label="Region / State"
+                value={selectedRegion}
+                onChange={handleRegionChange}
+                options={availableRegions.length > 0 ? availableRegions : ["Select a country first"]}
+              />
+
+              {/* City Selector (Automatic based on Region) */}
+              <SelectField
+                label="City"
+                value={selectedCity}
+                onChange={setSelectedCity}
+                options={availableCities.length > 0 ? availableCities : ["Select a region first"]}
+              />
+
+              {/* Business Type */}
+              <SelectField label="Business Type" value={businessType} onChange={setBusinessType} options={["Restaurant", "Agency", "Dental Clinic", "Real Estate"]} icon={<Building2 className="w-4 h-4 text-slate-500" />} />
+            </div>
+          </section>
+
+          <section className="rounded-xl border border-slate-800 bg-[#071321]/90 p-4 lg:p-5">
+            <SectionTitle number="2" title="What opportunity / need do you want to target?" />
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-2.5">
+              {opportunityOptions.map(([title, subtitle, iconName]) => {
+                const active = selectedOpportunities.includes(title);
+                const Icon = iconName === 'Search' ? Search : iconName === 'Activity' ? Activity : iconName === 'Star' ? Star : iconName === 'Target' ? Target : iconName === 'ShieldCheck' ? ShieldCheck : iconName === 'Sparkles' ? Sparkles : iconName === 'Timer' ? Timer : iconName === 'CalendarDays' ? CalendarDays : iconName === 'BarChart3' ? BarChart3 : iconName === 'PanelRight' ? PanelRight : FileText;
+                return <button key={title} onClick={() => toggle(selectedOpportunities, title, setSelectedOpportunities)} className={`min-h-[56px] rounded-lg border px-3 py-2 text-left flex items-center gap-2.5 transition-colors ${active ? "border-violet-500 bg-violet-500/10" : "border-slate-800 bg-slate-900/25 hover:border-slate-700"}`}><Icon className={`w-4 h-4 shrink-0 ${active ? "text-violet-400" : "text-slate-500"}`} /><span className="min-w-0"><span className="block text-[11px] font-medium text-slate-200 truncate">{title}</span><span className="block text-[10px] text-slate-500 truncate">{subtitle}</span></span>{active && <Check className="w-3.5 h-3.5 ml-auto text-violet-300 shrink-0" />}</button>;
+              })}
+            </div>
+          </section>
+
+          <section className="rounded-xl border border-slate-800 bg-[#071321]/90 p-4 lg:p-5">
+            <div className="flex items-center justify-between gap-3 mb-3"><SectionTitle number="3" title="What contact & business data do you want to find?" /><button onClick={() => setSelectedContacts(selectedContacts.length === contactOptions.length ? [] : contactOptions.map(([label]) => label))} className="text-[11px] text-slate-300 hover:text-white">{selectedContacts.length === contactOptions.length ? "Clear All" : "Select All"} <span className="inline-grid place-items-center w-4 h-4 ml-1 rounded-full bg-violet-600 text-white">{selectedContacts.length === contactOptions.length ? <Check className="w-3 h-3" /> : ""}</span></button></div>
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-2.5">
+              {contactOptions.map(([label, Icon, pro]) => { const active = selectedContacts.includes(label); return <button key={label} onClick={() => toggle(selectedContacts, label, setSelectedContacts)} className={`min-h-[48px] rounded-lg border px-3 py-2 text-left flex items-center gap-2 ${active ? "border-violet-500 bg-violet-500/10" : "border-slate-800 bg-slate-900/25 hover:border-slate-700"}`}><Icon className={`w-4 h-4 shrink-0 ${active ? "text-violet-300" : "text-slate-500"}`} /><span className="text-[10px] text-slate-200 truncate">{label}</span>{pro && <span className="ml-auto text-[8px] px-1.5 py-0.5 rounded bg-red-900/80 text-red-200">PRO</span>}{active && <Check className="w-3.5 h-3.5 text-violet-300 shrink-0" />}</button>; })}
+            </div>
+            <div className="mt-3 rounded-lg border border-slate-800 bg-[#06101c] p-4 flex flex-col lg:flex-row lg:items-center gap-4"><div className="w-10 h-10 rounded-xl bg-violet-500/10 grid place-items-center"><Globe2 className="w-5 h-5 text-violet-400" /></div><div className="flex-1"><div className="flex items-center gap-2"><h3 className="text-sm font-medium text-white">Website</h3><span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-300">Included</span></div><div className="grid grid-cols-2 md:grid-cols-3 gap-x-5 gap-y-1 mt-2 text-[10px] text-slate-400"><span className="text-emerald-400">✓ Website URL</span><span className="text-emerald-400">✓ Domain age</span><span className="text-emerald-400">✓ Mobile friendliness</span><span className="text-emerald-400">✓ SSL & security info</span><span className="text-emerald-400">✓ Last updated</span><span className="text-emerald-400">✓ Broken links (if any)</span><span className="text-emerald-400">✓ CMS / Technology used</span><span className="text-emerald-400">✓ Page speed score</span><span className="text-emerald-400">✓ Website quality score</span></div></div><div className="text-right text-[10px] text-slate-500">Estimated Credits / Lead: <span className="text-white">+1</span> <span className="inline-grid place-items-center w-4 h-4 rounded-full bg-violet-600 text-white">✦</span></div></div>
+            <div className="flex flex-wrap items-center justify-between gap-3 mt-4"><button onClick={() => setAdvancedFilters((value) => !value)} className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-xs ${advancedFilters ? "border-violet-500 text-violet-300 bg-violet-500/10" : "border-slate-700 text-slate-300 hover:border-slate-500"}`}><SlidersHorizontal className="w-4 h-4" />Advanced Filters</button><div className="flex items-center gap-2"><button onClick={clearAll} className="px-4 py-2 rounded-lg border border-slate-700 text-xs text-slate-300 hover:bg-slate-800">Clear All</button><button onClick={handleSearch} className="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 text-xs font-semibold text-white shadow-lg shadow-violet-950/30 hover:from-violet-500 hover:to-indigo-500">{searching ? <Activity className="w-4 h-4 animate-pulse" /> : <Search className="w-4 h-4" />}{searching ? "Searching…" : "Search Leads"}</button></div></div>{advancedFilters && <div className="mt-3 p-3 rounded-lg bg-slate-900/60 border border-violet-500/20 text-xs text-slate-400">Add revenue range, employee count, rating, domain age, and last-updated filters to narrow the opportunity set.</div>}</section>
+
+          <section className="rounded-xl border border-slate-800 bg-[#071321]/90 overflow-hidden">
+            <div className="p-4 flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-2"><SectionTitle number="4" title="Results" inline /><span className="text-xs text-violet-300">› {searched ? "5 businesses found" : "320 businesses found"}</span></div><div className="flex items-center gap-2"><button className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-700 text-[11px] text-slate-300"><Download className="w-3.5 h-3.5" />Export <ChevronDown className="w-3 h-3" /></button><button className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-700 text-[11px] text-slate-300"><Database className="w-3.5 h-3.5" />Columns</button></div></div>
+            <div className="px-4 border-b border-slate-800 flex items-center gap-5 overflow-x-auto">{["All", "No Website", "Weak Website", "Outdated Website", "Poor Mobile", "Weak SEO", "Low Visibility", "Weak Reviews", "Weak Social Media"].map((tab) => <button key={tab} onClick={() => setSelectedTab(tab === "Poor Mobile" ? "Poor Mobile Exp." : tab)} className={`py-3 text-[10px] whitespace-nowrap border-b-2 ${selectedTab === (tab === "Poor Mobile" ? "Poor Mobile Exp." : tab) ? "text-violet-300 border-violet-500" : "text-slate-500 border-transparent hover:text-slate-300"}`}>{tab} {tab === "All" ? "(320)" : tab === "Weak Website" ? "(50)" : tab === "Weak SEO" ? "(80)" : ""}</button>)}</div>
+            <div className="overflow-x-auto"><table className="w-full min-w-[900px] text-left"><thead className="bg-[#06101c] text-[10px] text-slate-500"><tr><th className="px-4 py-3"> <input type="checkbox" aria-label="Select all" /></th><th className="px-2 py-3">Business Name</th><th className="px-2 py-3">Category</th><th className="px-2 py-3">Opportunity</th><th className="px-2 py-3">Score</th><th className="px-2 py-3">Website</th><th className="px-2 py-3">Email</th><th className="px-2 py-3">Phone</th><th className="px-2 py-3">WhatsApp</th><th className="px-2 py-3">Google Profile</th><th className="px-2 py-3">Actions</th></tr></thead><tbody className="divide-y divide-slate-800/80">{filteredLeads.map((lead) => <tr key={lead.id} onClick={() => setSelectedLeadId(lead.id)} className={`text-[10px] cursor-pointer ${selectedLeadId === lead.id ? "bg-violet-500/8" : "hover:bg-slate-900/70"}`}><td className="px-4 py-3"><input type="checkbox" aria-label={`Select ${lead.company}`} onClick={(event) => event.stopPropagation()} /></td><td className="px-2 py-3"><div className="font-medium text-white">{lead.company}</div><div className="text-[9px] text-slate-500">{selectedCity ? `${selectedCity}, ` : ""}{selectedCountry || lead.location}</div></td><td className="px-2 py-3 text-slate-400">{lead.category}</td><td className="px-2 py-3"><span className="px-2 py-1 rounded bg-violet-500/20 text-violet-200">{lead.opportunity}</span></td><td className="px-2 py-3"><span className={`inline-grid place-items-center w-8 h-8 rounded-full border ${scoreClass(lead.score)}`}>{lead.score}</span></td><td className="px-2 py-3 text-slate-400"><ExternalLink className="w-3.5 h-3.5" /></td><td className="px-2 py-3 text-slate-400 max-w-[150px] truncate">{lead.email}</td><td className="px-2 py-3 text-slate-400">{lead.phone}</td><td className="px-2 py-3 text-emerald-400"><MessageCircle className="w-4 h-4" /></td><td className="px-2 py-3 text-red-400"><MapPin className="w-4 h-4" /></td><td className="px-2 py-3"><div className="flex items-center gap-1"><button className="p-1.5 rounded hover:bg-slate-800"><Eye className="w-3.5 h-3.5 text-slate-400" /></button><button className="p-1.5 rounded hover:bg-slate-800"><MoreHorizontal className="w-3.5 h-3.5 text-slate-400" /></button></div></td></tr>)}</tbody></table></div>
+          </section>
+
+          <section className="grid grid-cols-1 xl:grid-cols-3 gap-3">
+            <div className="xl:col-span-1 rounded-xl border border-slate-800 bg-[#071321]/90 overflow-hidden"><div className={`h-32 bg-gradient-to-br ${selectedLead.accent} relative`}><div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,.35),transparent_30%)]" /><span className="absolute left-3 bottom-3 px-2 py-1 rounded bg-violet-700 text-[9px] text-white">{selectedLead.opportunity}</span></div><div className="p-4"><div className="flex items-start justify-between"><div><h3 className="text-lg font-semibold text-white">{selectedLead.company}</h3><p className="text-[10px] text-slate-500 mt-1">{selectedLead.category} · {selectedCity ? `${selectedCity}, ` : ""}{selectedCountry || selectedLead.location}</p></div><Star className="w-4 h-4 text-slate-500" /></div><a href={`https://${selectedLead.website}`} className="inline-flex items-center gap-1 text-[10px] text-violet-300 mt-3">View on Google Maps <ExternalLink className="w-3 h-3" /></a><div className="mt-4 text-[10px] text-slate-500">Opportunity Score</div><div className="flex items-end gap-2 mt-1"><span className="text-4xl font-semibold text-emerald-400">{selectedLead.score}</span><span className="text-xs text-slate-500 mb-1">/100</span><span className="mb-1 px-2 py-1 rounded bg-emerald-500/15 text-emerald-300">Very High Opportunity</span></div><p className="text-[10px] text-slate-400 mt-3">This business has a very high potential for your outreach.</p></div></div>
+            <div className="rounded-xl border border-slate-800 bg-[#071321]/90 p-4"><h3 className="text-sm font-medium text-white">Why is this a high opportunity?</h3><div className="mt-4 space-y-3 text-[11px]">{[selectedLead.reason, "No online booking system", "Weak social media presence", selectedLead.reviews, "High search volume for this business"].map((reason) => <div key={reason} className="flex items-center gap-2 text-slate-300"><Check className="w-4 h-4 text-emerald-400" />{reason}</div>)}<div className="flex items-center gap-2 text-slate-500"><X className="w-4 h-4 text-orange-400" />Competitors have better websites</div></div></div>
+            <div className="rounded-xl border border-slate-800 bg-[#071321]/90 p-4 relative"><button className="absolute right-4 top-4 p-1 rounded-full border border-slate-700 text-slate-400 hover:text-white"><X className="w-4 h-4" /></button><h3 className="text-sm font-medium text-white">Recommended Service / Offer</h3><div className="mt-5 flex items-center gap-2 text-violet-300"><Sparkles className="w-5 h-5" />{selectedLead.service}</div><p className="text-[11px] text-slate-400 leading-relaxed mt-4">Perfect opportunity to offer a professional service that builds trust and drives more customers.</p><button className="mt-5 inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-violet-600 text-xs font-semibold text-white hover:bg-violet-500"><Mail className="w-4 h-4" />Use for Outreach</button></div>
+          </section>
+
+          <section className="rounded-xl border border-slate-800 bg-[#071321]/90 overflow-hidden"><div className="border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 px-4"><div className="flex items-center gap-5 overflow-x-auto">{["Business Info", "Contact & Business Data", "Opportunity Insights", "Notes", "Outreach History"].map((tab, index) => <button key={tab} className={`py-4 text-[10px] whitespace-nowrap border-b-2 ${index === 0 ? "text-violet-300 border-violet-500" : "text-slate-500 border-transparent"}`}>{tab}</button>)}</div><div className="flex items-center gap-2 py-2"><span className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-300 grid place-items-center text-[10px]">AI</span><span className="text-xs text-slate-300">AI Outreach Preview</span><select value={outreachLanguage} onChange={(event) => setOutreachLanguage(event.target.value)} className="ml-3 bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-[10px] text-slate-300"><option>English</option><option>Spanish</option><option>French</option></select></div></div><div className="grid grid-cols-1 lg:grid-cols-3"><div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-5 p-5 text-[11px] border-r border-slate-800"><InfoItem icon={Globe2} label="Website" value={`https://${selectedLead.website}`} /><InfoItem icon={MapPin} label="Address" value={`123 Main St, ${selectedCity || "Los Angeles"}, ${selectedRegion || "CA"}, ${selectedCountry || "USA"}`} /><InfoItem icon={CalendarDays} label="Founded" value="2015" /><InfoItem icon={Mail} label="Business Email" value={selectedLead.email} /><InfoItem icon={MapPin} label="Google Business Profile" value="View on Google" /><InfoItem icon={Users} label="Employees" value="11-50" /><InfoItem icon={Phone} label="Phone Number" value={selectedLead.phone} /><InfoItem icon={Building2} label="Category" value={selectedLead.category} /><InfoItem icon={UserRound} label="Owner" value="Marco Rossi" /></div><div className="p-5 bg-[#06101c]"><div className="text-[11px] text-slate-300 leading-relaxed space-y-4"><p>Hi {selectedLead.company},</p><p>I noticed your restaurant in {selectedCity || "Los Angeles"} has a lot of potential, but your website could better showcase your amazing food and attract more customers.</p><p>I’d love to help you improve your online presence and grow your business.</p><p>Would you be open to a quick chat?</p></div><button className="mt-5 w-full py-2.5 rounded-lg border border-emerald-500/50 text-emerald-300 text-xs hover:bg-emerald-500/10">Generate {outreachLanguage} version</button></div></div></section>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+function SectionTitle({ number, title, inline = false }: { number: string; title: string; inline?: boolean }) {
+  return <div className={`${inline ? "inline-flex" : "flex"} items-center gap-2 mb-4`}><span className="text-sm font-semibold text-white">{number}.</span><h2 className="text-sm font-semibold text-slate-200">{title}</h2><span className="text-[10px] text-slate-500">ⓘ</span></div>;
+}
+
+function SelectField({ label, value, onChange, options, icon }: { label: string; value: string; onChange: (value: string) => void; options: string[]; icon?: ReactNode }) {
+  return <label className="block"><span className="block text-[10px] text-slate-400 mb-1.5">{label}</span><span className="relative flex items-center"><span className="absolute left-3">{icon}</span><select value={value} onChange={(event) => onChange(event.target.value)} className={`w-full appearance-none rounded-lg border border-slate-700 bg-[#081724] ${icon ? "pl-9" : "pl-3"} pr-8 py-3 text-xs text-slate-200 outline-none focus:border-violet-500`}>{options.map((option) => <option key={option}>{option}</option>)}</select><ChevronDown className="absolute right-3 w-4 h-4 text-slate-500 pointer-events-none" /></span></label>;
+}
+
+function SideItem({ icon: Icon, label, active = false, expanded, onClick }: { icon: typeof Search; label: string; active?: boolean; expanded: boolean; onClick?: () => void }) {
+  return <button onClick={onClick} className={`w-full flex items-center ${expanded ? "justify-start px-3" : "justify-center px-2"} gap-3 py-2.5 rounded-lg text-left text-xs ${active ? "bg-violet-600/15 text-violet-300 border border-violet-500/30" : "text-slate-500 hover:bg-slate-800/70 hover:text-slate-200"}`}><Icon className="w-4 h-4 shrink-0" />{expanded && <span>{label}</span>}</button>;
+}
+
+function InfoItem({ icon: Icon, label, value }: { icon: typeof Globe2; label: string; value: string }) {
+  return <div><div className="flex items-center gap-2 text-slate-500"><Icon className="w-4 h-4" />{label}</div><div className="text-slate-200 mt-2 break-words">{value}</div></div>;
+}
