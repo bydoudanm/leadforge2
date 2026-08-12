@@ -50,8 +50,13 @@ type Lead = {
   opportunity: string;
   score: number;
   email: string;
+  ownerEmail?: string;
+  founderEmail?: string;
   phone: string;
   whatsapp?: string;
+  facebookPage?: string;
+  instagram?: string;
+  linkedinProfile?: string;
   googleProfile?: string;
   website: string;
   reason: string;
@@ -168,8 +173,13 @@ const leads: Lead[] = [
     opportunity: "Weak Website",
     score: 92,
     email: "napolipizzahouse@gmail.com",
+    ownerEmail: "marco.rossi@napolipizzahouse.com",
+    founderEmail: "marco.rossi@napolipizzahouse.com",
     phone: "(323) 555-0198",
     whatsapp: "+1 323 555 0198",
+    facebookPage: "facebook.com/napolipizzahouse",
+    instagram: "instagram.com/napolipizzahouse",
+    linkedinProfile: "linkedin.com/company/napoli-pizza-house",
     googleProfile: "https://maps.google.com/?q=Napoli+Pizza+House",
     website: "napolipizzahouse.com",
     reason: "Website needs improvement",
@@ -185,8 +195,12 @@ const leads: Lead[] = [
     opportunity: "Weak Website",
     score: 88,
     email: "sushiworld.la@gmail.com",
+    ownerEmail: "owner@sushiworldla.com",
     phone: "(323) 555-0123",
     whatsapp: "+1 323 555 0123",
+    facebookPage: "facebook.com/sushiworldla",
+    instagram: "instagram.com/sushiworldla",
+    linkedinProfile: "linkedin.com/company/sushi-world-la",
     googleProfile: "https://maps.google.com/?q=Sushi+World+LA",
     website: "sushiworldla.com",
     reason: "Slow mobile experience",
@@ -202,7 +216,10 @@ const leads: Lead[] = [
     opportunity: "Weak SEO",
     score: 85,
     email: "theburgerspot.la@gmail.com",
+    founderEmail: "founder@theburgerspotla.com",
     phone: "(323) 555-0145",
+    facebookPage: "facebook.com/theburgerspotla",
+    linkedinProfile: "linkedin.com/company/the-burger-spot-la",
     googleProfile: "https://maps.google.com/?q=The+Burger+Spot+LA",
     website: "theburgerspotla.com",
     reason: "Low local search visibility",
@@ -218,8 +235,10 @@ const leads: Lead[] = [
     opportunity: "Weak Social Media",
     score: 80,
     email: "tacofiesta.la@gmail.com",
+    ownerEmail: "manager@tacofiestala.com",
     phone: "(323) 555-0177",
     whatsapp: "+1 323 555 0177",
+    instagram: "instagram.com/tacofiestala",
     website: "tacofiestala.com",
     reason: "Low social presence",
     service: "Social Media Growth",
@@ -235,6 +254,8 @@ const leads: Lead[] = [
     score: 72,
     email: "pastapalace.la@gmail.com",
     phone: "(323) 555-0188",
+    facebookPage: "facebook.com/pastapalacela",
+    instagram: "instagram.com/pastapalacela",
     website: "pastapalacela.com",
     reason: "Outdated booking experience",
     service: "Website Creation",
@@ -306,6 +327,35 @@ function scoreClass(score: number) {
   if (score >= 90) return "bg-emerald-500/20 text-emerald-300 border-emerald-400/30";
   if (score >= 80) return "bg-amber-500/20 text-amber-300 border-amber-400/30";
   return "bg-orange-500/20 text-orange-300 border-orange-400/30";
+}
+
+function getLeadDataValue(lead: Lead, filter: AvailabilityFilter) {
+  switch (filter) {
+    case "Business Email":
+    case "Email":
+      return lead.email;
+    case "Owner / Manager Email":
+      return lead.ownerEmail;
+    case "CEO / Founder Email":
+      return lead.founderEmail;
+    case "Phone Number":
+    case "Phone":
+      return lead.phone;
+    case "WhatsApp Number":
+    case "WhatsApp":
+      return lead.whatsapp;
+    case "Facebook Page":
+      return lead.facebookPage;
+    case "Instagram":
+      return lead.instagram;
+    case "LinkedIn Profile":
+      return lead.linkedinProfile;
+    case "Google Business Profile":
+    case "Google Profile":
+      return lead.googleProfile;
+    case "Website":
+      return lead.website;
+  }
 }
 
 export default function LeadSearch() {
@@ -782,8 +832,8 @@ export default function LeadSearch() {
             <div className="flex flex-wrap items-center justify-between gap-3 mt-4"><div className="flex flex-wrap items-center gap-2"><button onClick={handleSearch} className="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 text-xs font-semibold text-white shadow-lg shadow-violet-950/30 hover:from-violet-500 hover:to-indigo-500">{searching ? <Activity className="w-4 h-4 animate-pulse" /> : <Search className="w-4 h-4" />}{searching ? "Searching…" : "Search Leads"}</button><label className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-950/40 px-3 py-2 text-xs text-slate-300"><span className="whitespace-nowrap">Leads to find</span><input aria-label="Number of leads to search" type="number" min="1" step="1" inputMode="numeric" value={requestedResultCount} onChange={(event) => { setRequestedResultCount(event.target.value); setSearchCountError(""); }} placeholder="e.g. 170" className="w-20 bg-transparent text-right text-white outline-none placeholder:text-slate-600" /></label>{searchCountError && <span className="text-[10px] text-rose-300">{searchCountError}</span>}</div><button onClick={clearAll} className="px-4 py-2 rounded-lg border border-slate-700 text-xs text-slate-300 hover:bg-slate-800">Clear All</button></div></section>
 
           <section className="rounded-xl border border-slate-800 bg-[#071321]/90 overflow-hidden">
-            <div className="p-4 flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-2"><SectionTitle number="4" title="Results" inline /><span className="text-xs text-violet-300">› {searched && resultCount > 0 ? `${resultCount.toLocaleString()} businesses found (showing ${Math.min(visibleLeads.length, resultCount)} preview rows)` : "Set a target count to search"}</span></div><div className="flex flex-wrap items-center gap-2"><button onClick={handleExport} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-700 text-[11px] text-slate-300"><Download className="w-3.5 h-3.5" />Export <ChevronDown className="w-3 h-3" /></button><button className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-700 text-[11px] text-slate-300"><Database className="w-3.5 h-3.5" />Columns</button></div></div>{actionNotice && <div className="mx-4 mb-3 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-[10px] text-emerald-300">{actionNotice}</div>}<div className="mx-4 mb-3 rounded-lg border border-slate-800 bg-slate-950/40 p-3"><div className="flex flex-wrap items-center gap-2"><span className="text-[10px] uppercase tracking-wide text-slate-400 mr-1">Saved filters</span><input aria-label="Saved filter name" value={savedFilterName} onChange={(event) => setSavedFilterName(event.target.value)} placeholder="Name this filter" className="w-40 rounded-md border border-slate-700 bg-slate-900/70 px-2.5 py-1.5 text-[10px] text-white outline-none placeholder:text-slate-600" /><button onClick={handleSaveFilter} disabled={savedFiltersLoading} className="rounded-md bg-violet-600 px-3 py-1.5 text-[10px] font-semibold text-white hover:bg-violet-500 disabled:opacity-50">{savedFiltersLoading ? "Saving…" : "Save Filter"}</button>{savedFilterNotice && <span className="text-[10px] text-emerald-300">{savedFilterNotice}</span>}</div>{savedFilters.length > 0 && <div className="mt-3 flex flex-wrap gap-2">{savedFilters.map((view) => <div key={view.id} className="inline-flex items-center rounded-md border border-violet-500/30 bg-violet-500/10"><button onClick={() => void handleApplySavedFilter(view)} className="px-2.5 py-1.5 text-[10px] text-violet-200 hover:text-white">{view.name}</button><button aria-label={`Delete saved filter ${view.name}`} onClick={() => void handleDeleteSavedFilter(view.id)} className="border-l border-violet-500/30 px-1.5 text-violet-300 hover:text-white"><X className="h-3 w-3" /></button></div>)}</div>}</div><div className="px-4 py-3 border-b border-slate-800 flex flex-wrap gap-2">{["All", "No Website", "Weak Website", "Outdated Website", "Poor Mobile", "Weak SEO", "Low Visibility", "Weak Reviews", "Weak Social Media"].map((tab) => { const value = tab === "Poor Mobile" ? "Poor Mobile Exp." : tab; const active = selectedTab === value; return <button key={tab} onClick={() => setSelectedTab(value)} className={`rounded-md border px-2.5 py-1.5 text-[10px] font-medium transition-colors ${active ? "border-violet-400 bg-white text-slate-950 ring-2 ring-violet-400/40" : "border-slate-700 bg-white text-slate-950 hover:bg-slate-100"}`}>{tab} {tab === "All" && searched ? `(${resultCount.toLocaleString()})` : ""}</button>; })}</div><div className="px-4 py-3 border-b border-slate-800 flex flex-wrap gap-2">{availabilityFilterOptions.map((filter) => <button key={filter} onClick={() => toggleDataFilter(filter)} className={`rounded-md border px-2.5 py-1.5 text-[10px] font-medium transition-colors ${selectedDataFilters.includes(filter) ? "border-blue-300 bg-blue-600 text-white ring-2 ring-blue-300/40" : "border-blue-500/70 bg-blue-950/70 text-white hover:bg-blue-800"}`}>{filter}{selectedDataFilters.includes(filter) ? " ✓" : ""}</button>)}</div>
-            <div className="overflow-x-auto"><table className="w-full min-w-[900px] text-left"><thead className="bg-[#06101c] text-[10px] text-slate-500"><tr><th className="px-4 py-3"><input type="checkbox" aria-label="Select all" checked={visibleLeads.length > 0 && visibleLeads.every((lead) => selectedRowIds.includes(lead.id))} onChange={() => setSelectedRowIds(visibleLeads.every((lead) => selectedRowIds.includes(lead.id)) ? [] : visibleLeads.map((lead) => lead.id))} /></th><th className="px-2 py-3">Business Name</th><th className="px-2 py-3">Category</th><th className="px-2 py-3">Opportunity</th><th className="px-2 py-3">Score</th><th className="px-2 py-3"><button onClick={() => toggleDataFilter("Website")} className={`rounded-md border px-2 py-1 bg-white text-slate-950 ${selectedDataFilters.includes("Website") ? "ring-2 ring-blue-300" : ""}`}>Website {selectedDataFilters.includes("Website") ? "✓" : "⌄"}</button></th><th className="px-2 py-3"><button onClick={() => toggleDataFilter("Email")} className={`rounded-md border px-2 py-1 bg-white text-slate-950 ${selectedDataFilters.includes("Email") ? "ring-2 ring-blue-300" : ""}`}>Email {selectedDataFilters.includes("Email") ? "✓" : "⌄"}</button></th><th className="px-2 py-3"><button onClick={() => toggleDataFilter("Phone")} className={`rounded-md border px-2 py-1 bg-white text-slate-950 ${selectedDataFilters.includes("Phone") ? "ring-2 ring-blue-300" : ""}`}>Phone {selectedDataFilters.includes("Phone") ? "✓" : "⌄"}</button></th><th className="px-2 py-3"><button onClick={() => toggleDataFilter("WhatsApp")} className={`rounded-md border px-2 py-1 bg-white text-slate-950 ${selectedDataFilters.includes("WhatsApp") ? "ring-2 ring-blue-300" : ""}`}>WhatsApp {selectedDataFilters.includes("WhatsApp") ? "✓" : "⌄"}</button></th><th className="px-2 py-3"><button onClick={() => toggleDataFilter("Google Profile")} className={`rounded-md border px-2 py-1 bg-white text-slate-950 ${selectedDataFilters.includes("Google Profile") ? "ring-2 ring-blue-300" : ""}`}>Google Profile {selectedDataFilters.includes("Google Profile") ? "✓" : "⌄"}</button></th><th className="px-2 py-3">Actions</th></tr></thead><tbody className="divide-y divide-slate-800/80">{visibleLeads.map((lead) => <tr key={lead.id} onClick={() => setSelectedLeadId(lead.id)} className={`text-[10px] cursor-pointer ${selectedLeadId === lead.id ? "bg-violet-500/8" : "hover:bg-slate-900/70"}`}><td className="px-4 py-3"><input type="checkbox" aria-label={`Select ${lead.company}`} checked={selectedRowIds.includes(lead.id)} onClick={(event) => event.stopPropagation()} onChange={() => toggleRowSelection(lead.id)} /></td><td className="px-2 py-3"><div className="font-medium text-white">{lead.company}</div><div className="text-[9px] text-slate-500">{selectedCity ? `${selectedCity}, ` : ""}{selectedCountry || lead.location}</div></td><td className="px-2 py-3 text-slate-400">{lead.category}</td><td className="px-2 py-3"><span className="px-2 py-1 rounded bg-violet-500/20 text-violet-200">{lead.opportunity}</span></td><td className="px-2 py-3"><span className={`inline-grid place-items-center w-8 h-8 rounded-full border ${scoreClass(lead.score)}`}>{lead.score}</span></td><td className="px-2 py-3 text-slate-400"><ExternalLink className="w-3.5 h-3.5" /></td><td className="px-2 py-3 text-slate-400 max-w-[150px] truncate">{lead.email}</td><td className="px-2 py-3 text-slate-400">{lead.phone}</td><td className="px-2 py-3 text-emerald-400"><MessageCircle className="w-4 h-4" /></td><td className="px-2 py-3 text-red-400"><MapPin className="w-4 h-4" /></td><td className="px-2 py-3"><div className="flex items-center gap-1"><button className="p-1.5 rounded hover:bg-slate-800"><Eye className="w-3.5 h-3.5 text-slate-400" /></button><button className="p-1.5 rounded hover:bg-slate-800"><MoreHorizontal className="w-3.5 h-3.5 text-slate-400" /></button></div></td></tr>)}</tbody></table></div>
+            <div className="p-4 flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-2"><SectionTitle number="4" title="Results" inline /><span className="text-xs text-violet-300">› {searched && resultCount > 0 ? `${resultCount.toLocaleString()} businesses found (showing ${Math.min(visibleLeads.length, resultCount)} preview rows)` : "Set a target count to search"}</span></div><div className="flex flex-wrap items-center gap-2"><button onClick={handleExport} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-700 text-[11px] text-slate-300"><Download className="w-3.5 h-3.5" />Export <ChevronDown className="w-3 h-3" /></button><button className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-700 text-[11px] text-slate-300"><Database className="w-3.5 h-3.5" />Columns</button></div></div>{actionNotice && <div className="mx-4 mb-3 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-[10px] text-emerald-300">{actionNotice}</div>}<div className="mx-4 mb-3 rounded-lg border border-slate-800 bg-slate-950/40 p-3"><div className="flex flex-wrap items-center gap-2"><span className="text-[10px] uppercase tracking-wide text-slate-400 mr-1">Saved filters</span><input aria-label="Saved filter name" value={savedFilterName} onChange={(event) => setSavedFilterName(event.target.value)} placeholder="Name this filter" className="w-40 rounded-md border border-slate-700 bg-slate-900/70 px-2.5 py-1.5 text-[10px] text-white outline-none placeholder:text-slate-600" /><button onClick={handleSaveFilter} disabled={savedFiltersLoading} className="rounded-md bg-violet-600 px-3 py-1.5 text-[10px] font-semibold text-white hover:bg-violet-500 disabled:opacity-50">{savedFiltersLoading ? "Saving…" : "Save Filter"}</button>{savedFilterNotice && <span className="text-[10px] text-emerald-300">{savedFilterNotice}</span>}</div>{savedFilters.length > 0 && <div className="mt-3 flex flex-wrap gap-2">{savedFilters.map((view) => <div key={view.id} className="inline-flex items-center rounded-md border border-violet-500/30 bg-violet-500/10"><button onClick={() => void handleApplySavedFilter(view)} className="px-2.5 py-1.5 text-[10px] text-violet-200 hover:text-white">{view.name}</button><button aria-label={`Delete saved filter ${view.name}`} onClick={() => void handleDeleteSavedFilter(view.id)} className="border-l border-violet-500/30 px-1.5 text-violet-300 hover:text-white"><X className="h-3 w-3" /></button></div>)}</div>}</div><div className="px-4 py-3 border-b border-slate-800 flex flex-wrap gap-2">{["All", "No Website", "Weak Website", "Outdated Website", "Poor Mobile", "Weak SEO", "Low Visibility", "Weak Reviews", "Weak Social Media"].map((tab) => { const value = tab === "Poor Mobile" ? "Poor Mobile Exp." : tab; const active = selectedTab === value; return <button key={tab} onClick={() => setSelectedTab(value)} className={`rounded-md border px-2.5 py-1.5 text-[10px] font-medium transition-colors ${active ? "border-violet-400 bg-white text-slate-950 ring-2 ring-violet-400/40" : "border-slate-700 bg-white text-slate-950 hover:bg-slate-100"}`}>{tab} {tab === "All" && searched ? `(${resultCount.toLocaleString()})` : ""}</button>; })}</div>
+            <div className="overflow-x-auto"><table className="w-full min-w-[1500px] text-left"><thead className="bg-[#06101c] text-[10px] text-slate-500"><tr><th className="px-4 py-3"><input type="checkbox" aria-label="Select all" checked={visibleLeads.length > 0 && visibleLeads.every((lead) => selectedRowIds.includes(lead.id))} onChange={() => setSelectedRowIds(visibleLeads.every((lead) => selectedRowIds.includes(lead.id)) ? [] : visibleLeads.map((lead) => lead.id))} /></th><th className="px-2 py-3">Business Name</th><th className="px-2 py-3">Category</th><th className="px-2 py-3">Opportunity</th><th className="px-2 py-3">Score</th>{availabilityFilterOptions.map((filter) => <th key={filter} className="px-2 py-3 min-w-[120px]"><button aria-label={`Filter results by ${filter}`} title={`Filter results by ${filter}`} onClick={() => toggleDataFilter(filter)} className={`max-w-[126px] whitespace-normal rounded-md border px-2 py-1 text-left leading-tight ${selectedDataFilters.includes(filter) ? "border-blue-300 bg-blue-600 text-white ring-2 ring-blue-300/40" : "border-slate-300 bg-white text-slate-950 hover:bg-slate-100"}`}>{filter}{selectedDataFilters.includes(filter) ? " ✓" : "⌄"}</button></th>)}<th className="px-2 py-3">Actions</th></tr></thead><tbody className="divide-y divide-slate-800/80">{visibleLeads.map((lead) => <tr key={lead.id} onClick={() => setSelectedLeadId(lead.id)} className={`text-[10px] cursor-pointer ${selectedLeadId === lead.id ? "bg-violet-500/8" : "hover:bg-slate-900/70"}`}><td className="px-4 py-3"><input type="checkbox" aria-label={`Select ${lead.company}`} checked={selectedRowIds.includes(lead.id)} onClick={(event) => event.stopPropagation()} onChange={() => toggleRowSelection(lead.id)} /></td><td className="px-2 py-3"><div className="font-medium text-white">{lead.company}</div><div className="text-[9px] text-slate-500">{selectedCity ? `${selectedCity}, ` : ""}{selectedCountry || lead.location}</div></td><td className="px-2 py-3 text-slate-400">{lead.category}</td><td className="px-2 py-3"><span className="px-2 py-1 rounded bg-violet-500/20 text-violet-200">{lead.opportunity}</span></td><td className="px-2 py-3"><span className={`inline-grid place-items-center w-8 h-8 rounded-full border ${scoreClass(lead.score)}`}>{lead.score}</span></td>{availabilityFilterOptions.map((filter) => { const value = getLeadDataValue(lead, filter); return <td key={filter} className="px-2 py-3 text-slate-400 max-w-[150px]"><span className="block max-w-[150px] truncate" title={value}>{value || "—"}</span></td>; })}<td className="px-2 py-3"><div className="flex items-center gap-1"><button className="p-1.5 rounded hover:bg-slate-800"><Eye className="w-3.5 h-3.5 text-slate-400" /></button><button className="p-1.5 rounded hover:bg-slate-800"><MoreHorizontal className="w-3.5 h-3.5 text-slate-400" /></button></div></td></tr>)}</tbody></table></div>
           </section>
 
           <section className="grid grid-cols-1 xl:grid-cols-3 gap-3">

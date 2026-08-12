@@ -67,3 +67,5 @@
 
 - [x] Add database-backed saved filter views for persistent user filter presets
 - [x] Implement immediate auto-filtering for contact data and opportunity tabs with distinct blue/white vs white/black pill styling
+
+- [x] Expand results-row contact filters to all 10 business data types and remove the duplicate red filter row in LeadSearch and CompanyLeadSearch
