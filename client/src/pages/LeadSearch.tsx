@@ -36,6 +36,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
+import { commonBusinessTypes } from "@/data/globalLocations";
 import type { ComponentType, ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
@@ -57,6 +58,9 @@ type Lead = {
 };
 
 type User = { id: number; name: string | null; email: string; plan: string };
+type LocationCountry = { code: string; name: string; iso3: string; emoji: string };
+type LocationState = { code: string; name: string; type: string | null };
+type LocationCity = { id: number; name: string };
 
 const worldLocations: Record<string, Record<string, string[]>> = {
   "United States": {
@@ -256,6 +260,14 @@ const topNavItems: ReadonlyArray<readonly [string, ComponentType<{ className?: s
   ["Integrations", Layers3, false],
 ];
 
+const businessTypeAliases: Record<string, string[]> = {
+  Plumber: ["pl", "plu", "plum", "bl"],
+  Restaurant: ["res", "rest", "food"],
+  "Dental Clinic": ["dent", "dental"],
+  "Real Estate Agency": ["real", "estate", "re"],
+  "Digital Marketing Agency": ["marketing", "agency", "digital"],
+};
+
 const contactOptions: ReadonlyArray<readonly [string, ComponentType<{ className?: string }>, boolean]> = [
   ["Business Email", Mail, false],
   ["Owner / Manager Email", UserRound, false],
@@ -292,14 +304,20 @@ export default function LeadSearch() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   
   // Location selection state
+  const [countries, setCountries] = useState<LocationCountry[]>([]);
   const [countryInput, setCountryInput] = useState("");
   const [selectedCountry, setSelectedCountry] = useState("");
   const [countryDropdownOpen, setCountryDropdownOpen] = useState(false);
-  
+  const [locationLoading, setLocationLoading] = useState(false);
+
+  const [availableRegions, setAvailableRegions] = useState<LocationState[]>([]);
   const [selectedRegion, setSelectedRegion] = useState("");
+  const [selectedRegionCode, setSelectedRegionCode] = useState("");
+  const [availableCities, setAvailableCities] = useState<LocationCity[]>([]);
   const [selectedCity, setSelectedCity] = useState("");
 
-  const [businessType, setBusinessType] = useState("Restaurant");
+  const [businessType, setBusinessType] = useState("");
+  const [businessTypeDropdownOpen, setBusinessTypeDropdownOpen] = useState(false);
   const [selectedOpportunities, setSelectedOpportunities] = useState<string[]>(["Weak Website", "Weak Social Media"]);
   const [selectedContacts, setSelectedContacts] = useState<string[]>(["Business Email", "Owner / Manager Email", "WhatsApp Number", "Google Business Profile", "Website"]);
   const [selectedLeadId, setSelectedLeadId] = useState(1);
@@ -324,40 +342,70 @@ export default function LeadSearch() {
     };
   }, [setLocation]);
 
+  useEffect(() => {
+    let active = true;
+    api<LocationCountry[]>("/api/locations/countries")
+      .then((data) => {
+        if (active) setCountries(data);
+      })
+      .catch(() => {
+        if (active) setError("Unable to load countries. Please try again.");
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const filteredCountries = useMemo(() => {
     const query = countryInput.trim().toLowerCase();
-    if (!query) return allCountries;
-    return allCountries.filter((c) => c.toLowerCase().includes(query));
-  }, [countryInput]);
+    if (!query) return countries;
+    return countries.filter((country) => country.name.toLowerCase().includes(query));
+  }, [countries, countryInput]);
 
-  const availableRegions = useMemo(() => {
-    if (!selectedCountry || !worldLocations[selectedCountry]) return [];
-    return Object.keys(worldLocations[selectedCountry]);
-  }, [selectedCountry]);
+  const filteredBusinessTypes = useMemo(() => {
+    const query = businessType.trim().toLowerCase();
+    if (!query) return commonBusinessTypes;
+    return commonBusinessTypes.filter((type) => type.toLowerCase().includes(query) || businessTypeAliases[type]?.some((alias) => alias.startsWith(query))).slice(0, 8);
+  }, [businessType]);
 
-  const availableCities = useMemo(() => {
-    if (!selectedCountry || !selectedRegion || !worldLocations[selectedCountry]?.[selectedRegion]) return [];
-    return worldLocations[selectedCountry][selectedRegion];
-  }, [selectedCountry, selectedRegion]);
-
-  const handleCountrySelect = (country: string) => {
-    setSelectedCountry(country);
-    setCountryInput(country);
+  const handleCountrySelect = async (country: LocationCountry) => {
+    setSelectedCountry(country.code);
+    setCountryInput(country.name);
     setCountryDropdownOpen(false);
-    
-    // Automatically select the first region/state and city for a smooth experience
-    const regions = Object.keys(worldLocations[country] || {});
-    const firstRegion = regions[0] || "";
-    setSelectedRegion(firstRegion);
-    
-    const cities = worldLocations[country]?.[firstRegion] || [];
-    setSelectedCity(cities[0] || "");
+    setAvailableRegions([]);
+    setSelectedRegion("");
+    setSelectedRegionCode("");
+    setAvailableCities([]);
+    setSelectedCity("");
+    setLocationLoading(true);
+    try {
+      const states = await api<LocationState[]>(`/api/locations/countries/${country.code}/states`);
+      setAvailableRegions(states);
+    } catch {
+      setError("Unable to load regions for this country.");
+    } finally {
+      setLocationLoading(false);
+    }
   };
 
-  const handleRegionChange = (region: string) => {
-    setSelectedRegion(region);
-    const cities = worldLocations[selectedCountry]?.[region] || [];
-    setSelectedCity(cities[0] || "");
+  const selectedCountryLabel = countries.find((country) => country.code === selectedCountry)?.name ?? "";
+
+  const handleRegionChange = async (stateCode: string) => {
+    const state = availableRegions.find((item) => item.code === stateCode);
+    setSelectedRegion(state?.name ?? "");
+    setSelectedRegionCode(stateCode);
+    setAvailableCities([]);
+    setSelectedCity("");
+    if (!selectedCountry || !stateCode) return;
+    setLocationLoading(true);
+    try {
+      const cities = await api<LocationCity[]>(`/api/locations/countries/${selectedCountry}/states/${stateCode}/cities`);
+      setAvailableCities(cities);
+    } catch {
+      setError("Unable to load cities for this region.");
+    } finally {
+      setLocationLoading(false);
+    }
   };
 
   const selectedLead = useMemo(() => leads.find((lead) => lead.id === selectedLeadId) ?? leads[0], [selectedLeadId]);
@@ -452,7 +500,10 @@ export default function LeadSearch() {
                       if (!event.target.value) {
                         setSelectedCountry("");
                         setSelectedRegion("");
+                        setSelectedRegionCode("");
                         setSelectedCity("");
+                        setAvailableRegions([]);
+                        setAvailableCities([]);
                       }
                     }}
                     onFocus={() => setCountryDropdownOpen(true)}
@@ -464,12 +515,12 @@ export default function LeadSearch() {
                   <div className="absolute left-0 right-0 mt-1 max-h-52 overflow-y-auto rounded-lg border border-slate-700 bg-[#081724] shadow-xl z-20">
                     {filteredCountries.map((country) => (
                       <button
-                        key={country}
+                        key={country.code}
                         type="button"
-                        onClick={() => handleCountrySelect(country)}
+                        onClick={() => void handleCountrySelect(country)}
                         className="w-full text-left px-3 py-2 text-xs text-slate-200 hover:bg-violet-600/20 hover:text-white"
                       >
-                        {country}
+                        <span className="mr-2">{country.emoji}</span>{country.name}
                       </button>
                     ))}
                   </div>
@@ -480,8 +531,12 @@ export default function LeadSearch() {
               <SelectField
                 label="Region / State"
                 value={selectedRegion}
-                onChange={handleRegionChange}
-                options={availableRegions.length > 0 ? availableRegions : ["Select a country first"]}
+                options={availableRegions.length > 0 ? availableRegions.map((region) => region.name) : [selectedCountry ? "No regions found" : "Select a country first"]}
+                disabled={availableRegions.length === 0}
+                onChange={(regionName) => {
+                  const region = availableRegions.find((item) => item.name === regionName);
+                  if (region) void handleRegionChange(region.code);
+                }}
               />
 
               {/* City Selector (Automatic based on Region) */}
@@ -489,11 +544,37 @@ export default function LeadSearch() {
                 label="City"
                 value={selectedCity}
                 onChange={setSelectedCity}
-                options={availableCities.length > 0 ? availableCities : ["Select a region first"]}
+                options={availableCities.length > 0 ? availableCities.map((city) => city.name) : [selectedRegion ? "No cities found" : "Select a region first"]}
+                disabled={availableCities.length === 0}
               />
 
               {/* Business Type */}
-              <SelectField label="Business Type" value={businessType} onChange={setBusinessType} options={["Restaurant", "Agency", "Dental Clinic", "Real Estate"]} icon={<Building2 className="w-4 h-4 text-slate-500" />} />
+              <div className="relative">
+                <span className="block text-[10px] text-slate-400 mb-1.5">Business Type</span>
+                <div className="relative flex items-center">
+                  <Building2 className="absolute left-3 w-4 h-4 text-slate-500 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={businessType}
+                    placeholder="Type a business (e.g. Plumber)…"
+                    onChange={(event) => {
+                      setBusinessType(event.target.value);
+                      setBusinessTypeDropdownOpen(true);
+                    }}
+                    onFocus={() => setBusinessTypeDropdownOpen(true)}
+                    className="w-full rounded-lg border border-slate-700 bg-[#081724] pl-9 pr-3 py-3 text-xs text-slate-200 outline-none focus:border-violet-500"
+                  />
+                </div>
+                {businessTypeDropdownOpen && filteredBusinessTypes.length > 0 && (
+                  <div className="absolute left-0 right-0 mt-1 max-h-52 overflow-y-auto rounded-lg border border-slate-700 bg-[#081724] shadow-xl z-20">
+                    {filteredBusinessTypes.map((type) => (
+                      <button key={type} type="button" onClick={() => { setBusinessType(type); setBusinessTypeDropdownOpen(false); }} className="w-full text-left px-3 py-2 text-xs text-slate-200 hover:bg-violet-600/20 hover:text-white">
+                        {businessType.trim() ? `Did you mean ${type}?` : type}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </section>
 
@@ -539,8 +620,8 @@ function SectionTitle({ number, title, inline = false }: { number: string; title
   return <div className={`${inline ? "inline-flex" : "flex"} items-center gap-2 mb-4`}><span className="text-sm font-semibold text-white">{number}.</span><h2 className="text-sm font-semibold text-slate-200">{title}</h2><span className="text-[10px] text-slate-500">ⓘ</span></div>;
 }
 
-function SelectField({ label, value, onChange, options, icon }: { label: string; value: string; onChange: (value: string) => void; options: string[]; icon?: ReactNode }) {
-  return <label className="block"><span className="block text-[10px] text-slate-400 mb-1.5">{label}</span><span className="relative flex items-center"><span className="absolute left-3">{icon}</span><select value={value} onChange={(event) => onChange(event.target.value)} className={`w-full appearance-none rounded-lg border border-slate-700 bg-[#081724] ${icon ? "pl-9" : "pl-3"} pr-8 py-3 text-xs text-slate-200 outline-none focus:border-violet-500`}>{options.map((option) => <option key={option}>{option}</option>)}</select><ChevronDown className="absolute right-3 w-4 h-4 text-slate-500 pointer-events-none" /></span></label>;
+function SelectField({ label, value, onChange, options, icon, disabled = false }: { label: string; value: string; onChange: (value: string) => void; options: string[]; icon?: ReactNode; disabled?: boolean }) {
+  return <label className="block"><span className="block text-[10px] text-slate-400 mb-1.5">{label}</span><span className="relative flex items-center"><span className="absolute left-3">{icon}</span><select disabled={disabled} value={value} onChange={(event) => onChange(event.target.value)} className={`w-full appearance-none rounded-lg border border-slate-700 bg-[#081724] ${icon ? "pl-9" : "pl-3"} pr-8 py-3 text-xs text-slate-200 outline-none focus:border-violet-500 disabled:cursor-not-allowed disabled:opacity-50`}>{options.map((option) => <option key={option}>{option}</option>)}</select><ChevronDown className="absolute right-3 w-4 h-4 text-slate-500 pointer-events-none" /></span></label>;
 }
 
 function SideItem({ icon: Icon, label, active = false, expanded, onClick }: { icon: typeof Search; label: string; active?: boolean; expanded: boolean; onClick?: () => void }) {

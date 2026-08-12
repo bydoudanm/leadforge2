@@ -28,8 +28,8 @@
 - [x] Verify Lead Search UI interactions, AI outreach preview, and filter state
 - [x] Run typecheck, tests, and build, then save a checkpoint for Lead Search
 
-- [ ] Verify Lead Search in an authenticated browser session, including filter toggles, results tabs, selected lead details, and AI outreach preview behavior
-- [ ] Save a new webdev checkpoint for the Lead Search feature after final verification
+- [x] Verify Lead Search in an authenticated browser session, including filter toggles, results tabs, selected lead details, and AI outreach preview behavior
+- [x] Save a new webdev checkpoint for the Lead Search feature after final verification
 
 - [x] Implement global country typeahead with empty default and full world database
 - [x] Implement automatic region/state population based on selected country
@@ -39,4 +39,10 @@
 - [x] Expand the world locations dictionary with comprehensive global countries, regions, and cities
 - [x] Save a webdev checkpoint for the complete Lead Search and dynamic location filtering update
 
-- [ ] Save a webdev checkpoint for the Lead Search and dynamic location filtering update
+- [x] Save a webdev checkpoint for the Lead Search and dynamic location filtering update
+
+- [x] Integrate comprehensive global country dataset (including Palestine and all world nations) with typeahead search
+- [x] Integrate complete first-level administrative divisions (e.g. all 50+ US states, Palestinian governorates, and global regions)
+- [x] Integrate complete dependent cities for each administrative division
+- [x] Implement free-text business type input with live autocomplete suggestions
+- [x] Run typecheck, tests, and build, then save a checkpoint for comprehensive global location and business search

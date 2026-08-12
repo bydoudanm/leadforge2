@@ -16,6 +16,9 @@ importers:
 
   .:
     dependencies:
+      '@countrystatecity/countries':
+        specifier: ^1.0.9
+        version: 1.0.9
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.64.0(react@19.2.1))
@@ -363,6 +366,9 @@ packages:
 
   '@chevrotain/utils@11.0.3':
     resolution: {integrity: sha512-YslZMgtJUyuMbZ+aKvfF3x1f5liK4mWNxghFRv7jqRR9C3R3fAOGTTKvxXDa2Y1s9zSbcpuO0cAxDYsc9SrXoQ==}
+
+  '@countrystatecity/countries@1.0.9':
+    resolution: {integrity: sha512-CnrvnMJS4lLZGFpEp+NuDN73DkDm7CkVE7wtTgntDNt3RQrQKgfs80VWDEIUmQpNSazlR7ipg4Qjc/xVAxFOVw==}
 
   '@date-fns/tz@1.4.1':
     resolution: {integrity: sha512-P5LUNhtbj6YfI3iJjw5EL9eUAG6OitD0W3fWQcpQjDRc/QIsL0tRNuO1PcDvPccWL1fSTXXdE1ds+l95DV/OFA==}
@@ -3820,6 +3826,8 @@ snapshots:
   '@chevrotain/types@11.0.3': {}
 
   '@chevrotain/utils@11.0.3': {}
+
+  '@countrystatecity/countries@1.0.9': {}
 
   '@date-fns/tz@1.4.1': {}
 

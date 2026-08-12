@@ -6,6 +6,7 @@ import { randomBytes } from "node:crypto";
 import { z } from "zod";
 import * as db from "./db";
 import { endSession, getRequestUser, hashPassword, startSession, verifyPassword } from "./auth";
+import { isIso2Code, listLocationCities, listLocationCountries, listLocationStates } from "./locationData";
 
 type AuthedRequest = Request & { user?: NonNullable<Awaited<ReturnType<typeof getRequestUser>>> };
 
@@ -60,6 +61,42 @@ export async function createApp() {
   });
 
   app.get("/api/health", (_request, response) => response.json({ ok: true }));
+
+  const locationApi = express.Router();
+  locationApi.use(requireUser);
+  locationApi.get("/countries", async (_request, response) => {
+    try {
+      response.json(await listLocationCountries());
+    } catch (error) {
+      safeError(response, error);
+    }
+  });
+  locationApi.get("/countries/:countryCode/states", async (request, response) => {
+    const countryCode = request.params.countryCode.toUpperCase();
+    if (!isIso2Code(countryCode)) {
+      response.status(400).json({ error: "Country code must be a valid ISO2 code" });
+      return;
+    }
+    try {
+      response.json(await listLocationStates(countryCode));
+    } catch (error) {
+      safeError(response, error);
+    }
+  });
+  locationApi.get("/countries/:countryCode/states/:stateCode/cities", async (request, response) => {
+    const countryCode = request.params.countryCode.toUpperCase();
+    const stateCode = request.params.stateCode.toUpperCase();
+    if (!isIso2Code(countryCode) || !stateCode) {
+      response.status(400).json({ error: "Country and state codes are required" });
+      return;
+    }
+    try {
+      response.json(await listLocationCities(countryCode, stateCode));
+    } catch (error) {
+      safeError(response, error);
+    }
+  });
+  app.use("/api/locations", locationApi);
 
   app.post("/api/auth/signup", async (request, response) => {
     const parsed = z.object({ name: z.string().trim().min(1).max(120), email: z.string().email().transform((value) => value.toLowerCase()), password: z.string().min(8).max(128) }).safeParse(request.body);
