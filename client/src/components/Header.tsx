@@ -1,10 +1,12 @@
 import { motion } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 import { useState } from 'react';
+import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
+  const [, setLocation] = useLocation();
 
   const navLinks = [
     { label: 'Features', href: '#features' },
@@ -59,10 +61,11 @@ export default function Header() {
           <Button
             variant="ghost"
             className="text-slate-300 hover:text-white"
+            onClick={() => setLocation('/login')}
           >
             Login
           </Button>
-          <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+          <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => setLocation('/signup')}>
             Sign Up
           </Button>
         </motion.div>
@@ -100,10 +103,11 @@ export default function Header() {
             <Button
               variant="ghost"
               className="w-full text-slate-300 hover:text-white justify-start"
+              onClick={() => setLocation('/login')}
             >
               Login
             </Button>
-            <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+            <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white" onClick={() => setLocation('/signup')}>
               Sign Up
             </Button>
           </div>

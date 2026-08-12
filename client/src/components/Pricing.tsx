@@ -4,69 +4,85 @@ import { Button } from '@/components/ui/button';
 
 const pricingPlans = [
   {
-    name: 'Free Trial',
-    price: '$0',
-    period: 'Forever',
-    description: 'Get started with limited features',
+    name: 'Starter',
+    price: '$29',
+    period: '/month',
+    description: 'Best for testing the data & starting outreach',
     features: [
-      'Up to 100 leads per month',
-      'Basic lead discovery',
-      'Email templates',
-      'Manual outreach only',
-      'Community support',
+      '2,000 verified leads',
+      'Access to businesses without websites',
+      'Basic filters (location, category)',
+      'Clean & structured lead data',
+      'CSV export',
+      'Connect up to 2 inboxes',
+      'Basic sending access',
+      'Limited daily sending volume',
     ],
-    cta: 'Start Free',
+    cta: 'Start Getting Leads',
     highlighted: false,
   },
   {
-    name: 'Basic',
-    price: '$99',
+    name: 'Growth',
+    price: '$79',
     period: '/month',
-    description: 'For freelancers and small teams',
+    description: 'For freelancers & small teams scaling outreach',
     features: [
-      'Up to 2,000 leads per month',
-      'AI lead discovery',
-      'Personalized emails',
-      'Basic automation',
-      'Email support',
-      'Monthly reports',
+      '10,000 leads/month',
+      'Advanced filters (niche targeting, location depth)',
+      'Higher-quality data enrichment',
+      'Faster lead access',
+      'Connect up to 5 inboxes',
+      'Automated sending system',
+      'Lead distribution across inboxes',
+      'Basic AI message generation',
+      'Simple personalization',
     ],
-    cta: 'Start Free Trial',
-    highlighted: false,
+    cta: 'Scale My Leads',
+    highlighted: true,
+    badge: 'Most Popular',
   },
   {
     name: 'Pro',
     price: '$299',
     period: '/month',
-    description: 'For growing agencies',
+    description: 'For agencies & serious outbound operators',
     features: [
-      'Unlimited leads',
-      'Advanced AI discovery',
-      'AI email generation',
-      'Full automation',
-      'Priority support',
-      'Advanced analytics',
-      'Multi-inbox sending',
-      'Custom workflows',
+      '50,000 leads/month',
+      'Premium data quality',
+      'Advanced segmentation',
+      'Priority data processing',
+      'Smart lead categorization',
+      'Connect up to 15 inboxes',
+      'High-volume sending system',
+      'Optimized inbox rotation',
+      'Advanced AI copy generation',
+      'Smart personalization at scale',
+      'Campaign optimization suggestions',
     ],
-    cta: 'Start Free Trial',
-    highlighted: true,
+    cta: 'Automate My Outreach',
+    highlighted: false,
   },
   {
-    name: 'Agency',
-    price: 'Custom',
-    period: 'pricing',
-    description: 'For enterprise teams',
+    name: 'Scale',
+    price: '$499',
+    period: '/month',
+    description: 'For high-volume operators & growth teams',
     features: [
-      'Everything in Pro',
-      'Unlimited team members',
-      'Custom integrations',
-      'Dedicated account manager',
-      'White-label options',
-      'API access',
-      'SLA guarantee',
+      '100,000+ leads/month',
+      'Maximum data coverage',
+      'Priority access to new datasets',
+      'Custom lead sourcing logic',
+      'Fastest delivery speed',
+      'Unlimited inbox connections',
+      'Full sending infrastructure',
+      'Advanced deliverability optimization',
+      'AI campaign automation',
+      'Dynamic personalization engine',
+      'Performance-based message optimization',
+      'Priority support',
+      'Dedicated onboarding',
     ],
-    cta: 'Contact Sales',
+    cta: 'Upgrade to Scale',
     highlighted: false,
   },
 ];
@@ -111,7 +127,7 @@ export default function Pricing() {
             <span className="text-gradient">Pricing</span>
           </h2>
           <p className="text-xl text-slate-400 max-w-2xl mx-auto">
-            Choose the plan that fits your needs. All plans include a 14-day free trial.
+            We provide the data — outreach is optional.
           </p>
         </motion.div>
 
@@ -143,7 +159,14 @@ export default function Pricing() {
                 } transition-colors`}
               >
                 <div className="mb-6">
-                  <h3 className="text-2xl font-bold text-white mb-2">{plan.name}</h3>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-2xl font-bold text-white">{plan.name}</h3>
+                    {plan.badge && (
+                      <span className="text-xs font-semibold px-3 py-1 bg-blue-500/20 border border-blue-500/50 rounded-full text-blue-300">
+                        {plan.badge}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-slate-400 text-sm">{plan.description}</p>
                 </div>
 
@@ -175,6 +198,25 @@ export default function Pricing() {
               </div>
             </motion.div>
           ))}
+        </motion.div>
+
+        {/* Enterprise Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.8 }}
+          viewport={{ once: true }}
+          className="mt-16 text-center"
+        >
+          <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-8 max-w-2xl mx-auto">
+            <h3 className="text-2xl font-bold text-white mb-3">Need massive lead volumes?</h3>
+            <p className="text-slate-400 mb-6">
+              For teams that need 200K+ / 500K+ / 1M+ leads with custom data sourcing and enterprise-level data pipelines.
+            </p>
+            <Button className="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold py-6 px-8 rounded-lg">
+              Contact Us
+            </Button>
+          </div>
         </motion.div>
       </div>
     </section>
