@@ -64,3 +64,6 @@
 - [x] Run typecheck, tests, build, and save checkpoint for combined filtering
 
 - [x] Implement persistent outreach state and navigation to Outreach tab when sending selected filtered leads to outreach
+
+- [x] Add database-backed saved filter views for persistent user filter presets
+- [x] Implement immediate auto-filtering for contact data and opportunity tabs with distinct blue/white vs white/black pill styling

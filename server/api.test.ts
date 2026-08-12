@@ -133,6 +133,42 @@ describe("LeadForge JSON API", () => {
     expect(updatePassword.mock.calls[0]?.[1]).toMatch(/^scrypt\$/);
   });
 
+  it("creates a saved filter view for the authenticated search mode", async () => {
+    vi.spyOn(db, "getSessionByHash").mockResolvedValue({ user: { id: 42, name: "Test User", email: "test@example.com", plan: "free_trial" } } as never);
+    vi.spyOn(db, "createSavedFilterView").mockResolvedValue({ id: 9, userId: 42, name: "Weak Website + Email", searchMode: "individual", filtersJson: JSON.stringify({ selectedTab: "Weak Website", selectedDataFilters: ["Email"] }), createdAt: new Date("2026-08-12T18:00:00Z"), updatedAt: new Date("2026-08-12T18:00:00Z") } as never);
+
+    const response = await fetch(`${baseUrl}/api/saved-filters`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: "leadforge_session=authenticated-test" },
+      body: JSON.stringify({ name: "Weak Website + Email", searchMode: "individual", filters: { selectedTab: "Weak Website", selectedDataFilters: ["Email"] } }),
+    });
+
+    expect(response.status).toBe(201);
+    await expect(response.json()).resolves.toMatchObject({ id: 9, name: "Weak Website + Email", searchMode: "individual", filters: { selectedTab: "Weak Website", selectedDataFilters: ["Email"] } });
+    expect(db.createSavedFilterView).toHaveBeenCalledWith(expect.objectContaining({ userId: 42, name: "Weak Website + Email", searchMode: "individual" }));
+  });
+
+  it("lists saved filters only for the authenticated search mode", async () => {
+    vi.spyOn(db, "getSessionByHash").mockResolvedValue({ user: { id: 42, name: "Test User", email: "test@example.com", plan: "free_trial" } } as never);
+    vi.spyOn(db, "listSavedFilterViews").mockResolvedValue([{ id: 9, userId: 42, name: "Company Emails", searchMode: "company", filtersJson: JSON.stringify({ selectedTab: "All", selectedDataFilters: ["Email"] }), createdAt: new Date("2026-08-12T18:00:00Z"), updatedAt: new Date("2026-08-12T18:00:00Z") }] as never);
+
+    const response = await fetch(`${baseUrl}/api/saved-filters?searchMode=company`, { headers: { Cookie: "leadforge_session=authenticated-test" } });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual([expect.objectContaining({ id: 9, searchMode: "company", filters: { selectedTab: "All", selectedDataFilters: ["Email"] } })]);
+    expect(db.listSavedFilterViews).toHaveBeenCalledWith(42, "company");
+  });
+
+  it("deletes a saved filter view only for the authenticated user", async () => {
+    vi.spyOn(db, "getSessionByHash").mockResolvedValue({ user: { id: 42, name: "Test User", email: "test@example.com", plan: "free_trial" } } as never);
+    const deleteSavedFilterView = vi.spyOn(db, "deleteSavedFilterView").mockResolvedValue(undefined);
+
+    const response = await fetch(`${baseUrl}/api/saved-filters/9`, { method: "DELETE", headers: { Cookie: "leadforge_session=authenticated-test" } });
+
+    expect(response.status).toBe(204);
+    expect(deleteSavedFilterView).toHaveBeenCalledWith(42, 9);
+  });
+
   it("validates login input before consulting persistence", async () => {
     const response = await fetch(`${baseUrl}/api/auth/login`, {
       method: "POST",

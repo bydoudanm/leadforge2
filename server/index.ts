@@ -7,6 +7,7 @@ import { z } from "zod";
 import * as db from "./db";
 import { endSession, getRequestUser, hashPassword, startSession, verifyPassword } from "./auth";
 import { isIso2Code, listLocationCities, listLocationCountries, listLocationStates } from "./locationData";
+import type { SavedFilterView } from "../drizzle/schema";
 
 type AuthedRequest = Request & { user?: NonNullable<Awaited<ReturnType<typeof getRequestUser>>> };
 
@@ -153,6 +154,68 @@ export async function createApp() {
     }
   });
   app.use("/api/outreach", outreachApi);
+
+  const savedFiltersApi = express.Router();
+  savedFiltersApi.use(requireUser);
+  savedFiltersApi.get("/", async (request: AuthedRequest, response) => {
+    const searchMode = request.query.searchMode === "company" ? "company" : "individual";
+    try {
+      const views = await db.listSavedFilterViews(request.user!.id, searchMode);
+      response.json((views as SavedFilterView[]).map((view) => ({
+        id: view.id,
+        name: view.name,
+        searchMode: view.searchMode,
+        filters: JSON.parse(view.filtersJson),
+        createdAt: view.createdAt,
+        updatedAt: view.updatedAt,
+      })));
+    } catch (error) {
+      safeError(response, error);
+    }
+  });
+  savedFiltersApi.post("/", async (request: AuthedRequest, response) => {
+    const parsed = z.object({
+      name: z.string().trim().min(1).max(120),
+      searchMode: z.enum(["individual", "company"]),
+      filters: z.record(z.string(), z.unknown()),
+    }).safeParse(request.body);
+    if (!parsed.success) {
+      response.status(400).json({ error: "Provide a filter name and valid filter settings" });
+      return;
+    }
+    try {
+      const view = await db.createSavedFilterView({
+        userId: request.user!.id,
+        name: parsed.data.name,
+        searchMode: parsed.data.searchMode,
+        filtersJson: JSON.stringify(parsed.data.filters),
+      });
+      response.status(201).json({
+        id: view.id,
+        name: view.name,
+        searchMode: view.searchMode,
+        filters: parsed.data.filters,
+        createdAt: view.createdAt,
+        updatedAt: view.updatedAt,
+      });
+    } catch (error) {
+      safeError(response, error);
+    }
+  });
+  savedFiltersApi.delete("/:id", async (request: AuthedRequest, response) => {
+    const id = Number(request.params.id);
+    if (!Number.isInteger(id) || id < 1) {
+      response.status(400).json({ error: "Saved filter id must be a positive integer" });
+      return;
+    }
+    try {
+      await db.deleteSavedFilterView(request.user!.id, id);
+      response.status(204).end();
+    } catch (error) {
+      safeError(response, error);
+    }
+  });
+  app.use("/api/saved-filters", savedFiltersApi);
 
   app.post("/api/auth/signup", async (request, response) => {
     const parsed = z.object({ name: z.string().trim().min(1).max(120), email: z.string().email().transform((value) => value.toLowerCase()), password: z.string().min(8).max(128) }).safeParse(request.body);

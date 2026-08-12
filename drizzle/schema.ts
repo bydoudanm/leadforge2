@@ -137,6 +137,19 @@ export const outreachLists = mysqlTable("outreachLists", {
 export type OutreachListItem = typeof outreachLists.$inferSelect;
 export type InsertOutreachListItem = typeof outreachLists.$inferInsert;
 
+export const savedFilterViews = mysqlTable("savedFilterViews", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  name: varchar("name", { length: 120 }).notNull(),
+  searchMode: mysqlEnum("searchMode", ["individual", "company"]).notNull(),
+  filtersJson: text("filtersJson").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SavedFilterView = typeof savedFilterViews.$inferSelect;
+export type InsertSavedFilterView = typeof savedFilterViews.$inferInsert;
+
 export const opportunities = mysqlTable("opportunities", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),

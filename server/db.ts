@@ -214,3 +214,27 @@ export async function insertIntoOutreachLists(values: schema.InsertOutreachListI
   if (values.length === 0) return;
   await database.insert(schema.outreachLists).values(values);
 }
+
+export async function listSavedFilterViews(userId: number, searchMode: "individual" | "company") {
+  const database = await getDb();
+  if (!database) return [];
+  return database
+    .select()
+    .from(schema.savedFilterViews)
+    .where(and(eq(schema.savedFilterViews.userId, userId), eq(schema.savedFilterViews.searchMode, searchMode)))
+    .orderBy(desc(schema.savedFilterViews.updatedAt));
+}
+
+export async function createSavedFilterView(input: schema.InsertSavedFilterView) {
+  const database = await getDb();
+  if (!database) throw new Error("Database is not configured");
+  const result = await database.insert(schema.savedFilterViews).values(input);
+  const rows = await database.select().from(schema.savedFilterViews).where(eq(schema.savedFilterViews.id, Number(result[0].insertId))).limit(1);
+  return rows[0];
+}
+
+export async function deleteSavedFilterView(userId: number, id: number) {
+  const database = await getDb();
+  if (!database) throw new Error("Database is not configured");
+  await database.delete(schema.savedFilterViews).where(and(eq(schema.savedFilterViews.userId, userId), eq(schema.savedFilterViews.id, id)));
+}

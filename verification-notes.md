@@ -36,3 +36,9 @@
 - 2026-08-12: Lead Search authenticated browser check combined the Weak Website opportunity tab with the Email availability filter and displayed only three matching preview rows. Selecting all filtered rows and using Export produced the success notice “3 filtered results exported.” Using the outreach action produced “3 filtered results added to Outreach.”
 
 - 2026-08-12: Company Lead Search browser validation confirmed Advanced Filters, Email, and the Weak Website opportunity tab work independently and together. The combined state displayed only the three matching Weak Website rows with Email ✓ active.
+
+2026-08-12: Authenticated Lead Search verification confirmed the Advanced Filters button and yellow container are gone. The Results section now displays opportunity chips and blue contact chips directly. Clicking Weak Website updated the table immediately to three matching rows; clicking Email added Email ✓ immediately while preserving the three-row combined result.
+
+2026-08-12: Saved-filter verification confirmed that the authenticated user can save the active Weak Website + Email combination as “Weak Website Email”. After Clear All reset the active filters, clicking the saved view restored Weak Website and Email ✓ and returned the three matching rows.
+
+2026-08-12: Company Lead Search browser verification confirmed the same immediate Weak Website + Email filtering behavior, producing the three matching rows. The saved-filter list is mode-specific: the individual Lead Search saved view was not shown in Company Lead Search.
