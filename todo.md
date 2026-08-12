@@ -69,3 +69,5 @@
 - [x] Implement immediate auto-filtering for contact data and opportunity tabs with distinct blue/white vs white/black pill styling
 
 - [x] Expand results-row contact filters to all 10 business data types and remove the duplicate red filter row in LeadSearch and CompanyLeadSearch
+
+- [x] Redesign Results section so Saved Filters is compact and contact-data filters are in a dedicated wrapped container below opportunity tabs
