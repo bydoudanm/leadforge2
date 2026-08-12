@@ -30,3 +30,9 @@
 - 2026-08-12: Company Lead Search Results toolbar validation confirmed Advanced Filters opens in the Results container beside Export and Columns, with its explanatory filter panel displayed below the toolbar.
 
 - 2026-08-12: Lead Search browser validation confirmed Advanced Filters opens in the Results container beside Export and Columns, matching Company Lead Search.
+
+- 2026-08-12: Lead Search browser validation confirmed the Results toolbar exposes Email, Phone, WhatsApp, Google Profile, and Website availability filters, and the table headers expose the same clickable filters. Email toggled active successfully; a combined Weak Website + Email check is still being completed.
+
+- 2026-08-12: Lead Search authenticated browser check combined the Weak Website opportunity tab with the Email availability filter and displayed only three matching preview rows. Selecting all filtered rows and using Export produced the success notice “3 filtered results exported.” Using the outreach action produced “3 filtered results added to Outreach.”
+
+- 2026-08-12: Company Lead Search browser validation confirmed Advanced Filters, Email, and the Weak Website opportunity tab work independently and together. The combined state displayed only the three matching Weak Website rows with Email ✓ active.

@@ -119,6 +119,24 @@ export const analytics = mysqlTable("analytics", {
 export type Analytics = typeof analytics.$inferSelect;
 export type InsertAnalytics = typeof analytics.$inferInsert;
 
+export const outreachLists = mysqlTable("outreachLists", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  companyName: varchar("companyName", { length: 255 }).notNull(),
+  category: varchar("category", { length: 100 }),
+  opportunity: varchar("opportunity", { length: 100 }),
+  score: int("score").default(0),
+  email: varchar("email", { length: 320 }),
+  phone: varchar("phone", { length: 50 }),
+  website: varchar("website", { length: 255 }),
+  location: varchar("location", { length: 255 }),
+  searchMode: varchar("searchMode", { length: 50 }).default("individual").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type OutreachListItem = typeof outreachLists.$inferSelect;
+export type InsertOutreachListItem = typeof outreachLists.$inferInsert;
+
 export const opportunities = mysqlTable("opportunities", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),

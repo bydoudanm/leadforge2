@@ -98,6 +98,62 @@ export async function createApp() {
   });
   app.use("/api/locations", locationApi);
 
+  const outreachApi = express.Router();
+  outreachApi.use(requireUser);
+  outreachApi.get("/", async (request: AuthedRequest, response) => {
+    try {
+      const database = await db.getDb();
+      if (!database) {
+        response.json([]);
+        return;
+      }
+      const items = await database.select().from(db.outreachLists).where(db.eq(db.outreachLists.userId, request.user!.id)).orderBy(db.desc(db.outreachLists.createdAt));
+      response.json(items);
+    } catch (error) {
+      safeError(response, error);
+    }
+  });
+  outreachApi.post("/", async (request: AuthedRequest, response) => {
+    const parsed = z.object({
+      leads: z.array(z.object({
+        companyName: z.string().min(1),
+        category: z.string().optional(),
+        opportunity: z.string().optional(),
+        score: z.number().default(0),
+        email: z.string().optional(),
+        phone: z.string().optional(),
+        website: z.string().optional(),
+        location: z.string().optional(),
+        searchMode: z.string().default("individual"),
+      })).min(1),
+    }).safeParse(request.body);
+
+    if (!parsed.success) {
+      response.status(400).json({ error: "Provide at least one lead to add to outreach" });
+      return;
+    }
+
+    try {
+      const values = parsed.data.leads.map((lead) => ({
+        userId: request.user!.id,
+        companyName: lead.companyName,
+        category: lead.category ?? null,
+        opportunity: lead.opportunity ?? null,
+        score: lead.score ?? 0,
+        email: lead.email ?? null,
+        phone: lead.phone ?? null,
+        website: lead.website ?? null,
+        location: lead.location ?? null,
+        searchMode: lead.searchMode ?? "individual",
+      }));
+      await db.insertIntoOutreachLists(values);
+      response.json({ success: true, count: values.length });
+    } catch (error) {
+      safeError(response, error);
+    }
+  });
+  app.use("/api/outreach", outreachApi);
+
   app.post("/api/auth/signup", async (request, response) => {
     const parsed = z.object({ name: z.string().trim().min(1).max(120), email: z.string().email().transform((value) => value.toLowerCase()), password: z.string().min(8).max(128) }).safeParse(request.body);
     if (!parsed.success) {

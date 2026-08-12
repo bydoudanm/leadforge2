@@ -37,6 +37,7 @@ import {
   Zap,
 } from "lucide-react";
 import { commonBusinessTypes } from "@/data/globalLocations";
+import { availabilityFilterOptions, filterLeads, type AvailabilityFilter } from "@/lib/leadSearchFilters";
 import type { ComponentType, ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
@@ -50,6 +51,8 @@ type Lead = {
   score: number;
   email: string;
   phone: string;
+  whatsapp?: string;
+  googleProfile?: string;
   website: string;
   reason: string;
   service: string;
@@ -166,6 +169,8 @@ const leads: Lead[] = [
     score: 92,
     email: "napolipizzahouse@gmail.com",
     phone: "(323) 555-0198",
+    whatsapp: "+1 323 555 0198",
+    googleProfile: "https://maps.google.com/?q=Napoli+Pizza+House",
     website: "napolipizzahouse.com",
     reason: "Website needs improvement",
     service: "Website Creation",
@@ -181,6 +186,8 @@ const leads: Lead[] = [
     score: 88,
     email: "sushiworld.la@gmail.com",
     phone: "(323) 555-0123",
+    whatsapp: "+1 323 555 0123",
+    googleProfile: "https://maps.google.com/?q=Sushi+World+LA",
     website: "sushiworldla.com",
     reason: "Slow mobile experience",
     service: "Website Optimization",
@@ -196,6 +203,7 @@ const leads: Lead[] = [
     score: 85,
     email: "theburgerspot.la@gmail.com",
     phone: "(323) 555-0145",
+    googleProfile: "https://maps.google.com/?q=The+Burger+Spot+LA",
     website: "theburgerspotla.com",
     reason: "Low local search visibility",
     service: "Local SEO",
@@ -211,6 +219,7 @@ const leads: Lead[] = [
     score: 80,
     email: "tacofiesta.la@gmail.com",
     phone: "(323) 555-0177",
+    whatsapp: "+1 323 555 0177",
     website: "tacofiestala.com",
     reason: "Low social presence",
     service: "Social Media Growth",
@@ -323,7 +332,10 @@ export default function LeadSearch() {
   const [selectedOpportunities, setSelectedOpportunities] = useState<string[]>(["Weak Website", "Weak Social Media"]);
   const [selectedContacts, setSelectedContacts] = useState<string[]>(["Business Email", "Owner / Manager Email", "WhatsApp Number", "Google Business Profile", "Website"]);
   const [selectedLeadId, setSelectedLeadId] = useState(1);
+  const [selectedRowIds, setSelectedRowIds] = useState<number[]>([]);
   const [selectedTab, setSelectedTab] = useState("All");
+  const [selectedDataFilters, setSelectedDataFilters] = useState<AvailabilityFilter[]>([]);
+  const [actionNotice, setActionNotice] = useState("");
   const [searching, setSearching] = useState(false);
   const [searched, setSearched] = useState(false);
   const [outreachLanguage, setOutreachLanguage] = useState("English");
@@ -413,12 +425,10 @@ export default function LeadSearch() {
   };
 
   const selectedLead = useMemo(() => leads.find((lead) => lead.id === selectedLeadId) ?? leads[0], [selectedLeadId]);
-  const filteredLeads = useMemo(() => {
-    if (selectedTab === "All") return leads;
-    return leads.filter((lead) => lead.opportunity === selectedTab);
-  }, [selectedTab]);
-  const resultCount = Number(requestedResultCount);
-  const visibleLeads = searched && Number.isInteger(resultCount) && resultCount > 0 ? filteredLeads.slice(0, resultCount) : filteredLeads;
+  const filteredLeads = useMemo(() => filterLeads(leads, selectedTab, selectedDataFilters), [selectedTab, selectedDataFilters]);
+  const requestedCount = Number(requestedResultCount);
+  const resultCount = searched && selectedTab === "All" && selectedDataFilters.length === 0 ? requestedCount : filteredLeads.length;
+  const visibleLeads = searched && Number.isInteger(requestedCount) && requestedCount > 0 ? filteredLeads.slice(0, requestedCount) : filteredLeads;
 
   const toggle = (items: string[], value: string, setter: (value: string[]) => void) => {
     setter(items.includes(value) ? items.filter((item) => item !== value) : [...items, value]);
@@ -428,6 +438,9 @@ export default function LeadSearch() {
     setSelectedOpportunities([]);
     setSelectedContacts([]);
     setSelectedTab("All");
+    setSelectedDataFilters([]);
+    setSelectedRowIds([]);
+    setActionNotice("");
     setCountryInput("");
     setSelectedCountry("");
     setSelectedRegion("");
@@ -435,6 +448,65 @@ export default function LeadSearch() {
     setRequestedResultCount("");
     setSearchCountError("");
     setSearched(false);
+  };
+
+  const toggleDataFilter = (filter: AvailabilityFilter) => {
+    setSelectedDataFilters((current) => current.includes(filter) ? current.filter((item) => item !== filter) : [...current, filter]);
+    setActionNotice("");
+  };
+
+  const toggleRowSelection = (id: number) => {
+    setSelectedRowIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+  };
+
+  const handleExport = () => {
+    const rows = visibleLeads.filter((lead) => selectedRowIds.length === 0 || selectedRowIds.includes(lead.id));
+    if (rows.length === 0) {
+      setActionNotice("No matching results are available to export.");
+      return;
+    }
+    const header = ["Business Name", "Category", "Opportunity", "Score", "Website", "Email", "Phone", "WhatsApp", "Google Profile"];
+    const csv = [header, ...rows.map((lead) => [lead.company, lead.category, lead.opportunity, lead.score, lead.website, lead.email, lead.phone, lead.whatsapp ?? "", lead.googleProfile ?? ""])].map((row) => row.map((value) => `"${String(value).replaceAll("\"", "\"\"")}"`).join(",")).join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `leadforge-${searchMode}-results.csv`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+    setActionNotice(`${rows.length} filtered result${rows.length === 1 ? "" : "s"} exported.`);
+  };
+
+  const handleUseForOutreach = async () => {
+    const rows = visibleLeads.filter((lead) => selectedRowIds.length === 0 || selectedRowIds.includes(lead.id));
+    if (rows.length === 0) {
+      setActionNotice("No matching results are available for outreach.");
+      return;
+    }
+    try {
+      const response = await fetch("/api/outreach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          leads: rows.map((lead) => ({
+            companyName: lead.company,
+            category: lead.category,
+            opportunity: lead.opportunity,
+            score: lead.score,
+            email: lead.email,
+            phone: lead.phone,
+            website: lead.website,
+            location: selectedCity ? `${selectedCity}, ${selectedCountry || lead.location}` : (selectedCountry || lead.location),
+            searchMode,
+          })),
+        }),
+      });
+      if (!response.ok) throw new Error("Failed to save outreach leads");
+      setActionNotice(`${rows.length} filtered result${rows.length === 1 ? "" : "s"} saved to Outreach.`);
+      setTimeout(() => setLocation("/outreach"), 800);
+    } catch {
+      setActionNotice("Unable to send leads to outreach. Please try again.");
+    }
   };
 
   const handleSearch = () => {
@@ -613,15 +685,15 @@ export default function LeadSearch() {
             <div className="flex flex-wrap items-center justify-between gap-3 mt-4"><div className="flex flex-wrap items-center gap-2"><button onClick={handleSearch} className="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 text-xs font-semibold text-white shadow-lg shadow-violet-950/30 hover:from-violet-500 hover:to-indigo-500">{searching ? <Activity className="w-4 h-4 animate-pulse" /> : <Search className="w-4 h-4" />}{searching ? "Searching…" : "Search Leads"}</button><label className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-950/40 px-3 py-2 text-xs text-slate-300"><span className="whitespace-nowrap">Leads to find</span><input aria-label="Number of leads to search" type="number" min="1" step="1" inputMode="numeric" value={requestedResultCount} onChange={(event) => { setRequestedResultCount(event.target.value); setSearchCountError(""); }} placeholder="e.g. 170" className="w-20 bg-transparent text-right text-white outline-none placeholder:text-slate-600" /></label>{searchCountError && <span className="text-[10px] text-rose-300">{searchCountError}</span>}</div><button onClick={clearAll} className="px-4 py-2 rounded-lg border border-slate-700 text-xs text-slate-300 hover:bg-slate-800">Clear All</button></div></section>
 
           <section className="rounded-xl border border-slate-800 bg-[#071321]/90 overflow-hidden">
-            <div className="p-4 flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-2"><SectionTitle number="4" title="Results" inline /><span className="text-xs text-violet-300">› {searched && resultCount > 0 ? `${resultCount.toLocaleString()} businesses found (showing ${Math.min(visibleLeads.length, resultCount)} preview rows)` : "Set a target count to search"}</span></div><div className="flex flex-wrap items-center gap-2"><button onClick={() => setAdvancedFilters((value) => !value)} className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-[11px] ${advancedFilters ? "border-violet-500 text-violet-300 bg-violet-500/10" : "border-slate-700 text-slate-300 hover:border-slate-500"}`}><SlidersHorizontal className="w-3.5 h-3.5" />Advanced Filters</button><button className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-700 text-[11px] text-slate-300"><Download className="w-3.5 h-3.5" />Export <ChevronDown className="w-3 h-3" /></button><button className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-700 text-[11px] text-slate-300"><Database className="w-3.5 h-3.5" />Columns</button></div></div>{advancedFilters && <div className="mx-4 mb-3 p-3 rounded-lg bg-slate-900/60 border border-violet-500/20 text-xs text-slate-400">Add revenue range, employee count, rating, domain age, and last-updated filters to narrow the opportunity set.</div>}
+            <div className="p-4 flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-2"><SectionTitle number="4" title="Results" inline /><span className="text-xs text-violet-300">› {searched && resultCount > 0 ? `${resultCount.toLocaleString()} businesses found (showing ${Math.min(visibleLeads.length, resultCount)} preview rows)` : "Set a target count to search"}</span></div><div className="flex flex-wrap items-center gap-2"><button onClick={() => setAdvancedFilters((value) => !value)} className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-[11px] ${advancedFilters ? "border-violet-500 text-violet-300 bg-violet-500/10" : "border-slate-700 text-slate-300 hover:border-slate-500"}`}><SlidersHorizontal className="w-3.5 h-3.5" />Advanced Filters</button><button onClick={handleExport} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-700 text-[11px] text-slate-300"><Download className="w-3.5 h-3.5" />Export <ChevronDown className="w-3 h-3" /></button><button className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-700 text-[11px] text-slate-300"><Database className="w-3.5 h-3.5" />Columns</button></div></div>{actionNotice && <div className="mx-4 mb-3 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-[10px] text-emerald-300">{actionNotice}</div>}{advancedFilters && <div className="mx-4 mb-3 p-3 rounded-lg bg-slate-900/60 border border-violet-500/20 text-xs text-slate-400"><div className="text-slate-300 mb-2">Filter results by available contact and business data</div><div className="flex flex-wrap gap-2">{availabilityFilterOptions.map((filter) => <button key={filter} onClick={() => toggleDataFilter(filter)} className={`px-2.5 py-1.5 rounded-md border text-[10px] ${selectedDataFilters.includes(filter) ? "border-violet-500 bg-violet-500/15 text-violet-200" : "border-slate-700 text-slate-400 hover:border-slate-500"}`}>{filter}{selectedDataFilters.includes(filter) ? " ✓" : ""}</button>)}</div><p className="mt-2 text-[10px] text-slate-500">Choose one or more fields; results must contain every selected field.</p></div>}
             <div className="px-4 border-b border-slate-800 flex items-center gap-5 overflow-x-auto">{["All", "No Website", "Weak Website", "Outdated Website", "Poor Mobile", "Weak SEO", "Low Visibility", "Weak Reviews", "Weak Social Media"].map((tab) => <button key={tab} onClick={() => setSelectedTab(tab === "Poor Mobile" ? "Poor Mobile Exp." : tab)} className={`py-3 text-[10px] whitespace-nowrap border-b-2 ${selectedTab === (tab === "Poor Mobile" ? "Poor Mobile Exp." : tab) ? "text-violet-300 border-violet-500" : "text-slate-500 border-transparent hover:text-slate-300"}`}>{tab} {tab === "All" && searched ? `(${resultCount.toLocaleString()})` : ""}</button>)}</div>
-            <div className="overflow-x-auto"><table className="w-full min-w-[900px] text-left"><thead className="bg-[#06101c] text-[10px] text-slate-500"><tr><th className="px-4 py-3"> <input type="checkbox" aria-label="Select all" /></th><th className="px-2 py-3">Business Name</th><th className="px-2 py-3">Category</th><th className="px-2 py-3">Opportunity</th><th className="px-2 py-3">Score</th><th className="px-2 py-3">Website</th><th className="px-2 py-3">Email</th><th className="px-2 py-3">Phone</th><th className="px-2 py-3">WhatsApp</th><th className="px-2 py-3">Google Profile</th><th className="px-2 py-3">Actions</th></tr></thead><tbody className="divide-y divide-slate-800/80">{visibleLeads.map((lead) => <tr key={lead.id} onClick={() => setSelectedLeadId(lead.id)} className={`text-[10px] cursor-pointer ${selectedLeadId === lead.id ? "bg-violet-500/8" : "hover:bg-slate-900/70"}`}><td className="px-4 py-3"><input type="checkbox" aria-label={`Select ${lead.company}`} onClick={(event) => event.stopPropagation()} /></td><td className="px-2 py-3"><div className="font-medium text-white">{lead.company}</div><div className="text-[9px] text-slate-500">{selectedCity ? `${selectedCity}, ` : ""}{selectedCountry || lead.location}</div></td><td className="px-2 py-3 text-slate-400">{lead.category}</td><td className="px-2 py-3"><span className="px-2 py-1 rounded bg-violet-500/20 text-violet-200">{lead.opportunity}</span></td><td className="px-2 py-3"><span className={`inline-grid place-items-center w-8 h-8 rounded-full border ${scoreClass(lead.score)}`}>{lead.score}</span></td><td className="px-2 py-3 text-slate-400"><ExternalLink className="w-3.5 h-3.5" /></td><td className="px-2 py-3 text-slate-400 max-w-[150px] truncate">{lead.email}</td><td className="px-2 py-3 text-slate-400">{lead.phone}</td><td className="px-2 py-3 text-emerald-400"><MessageCircle className="w-4 h-4" /></td><td className="px-2 py-3 text-red-400"><MapPin className="w-4 h-4" /></td><td className="px-2 py-3"><div className="flex items-center gap-1"><button className="p-1.5 rounded hover:bg-slate-800"><Eye className="w-3.5 h-3.5 text-slate-400" /></button><button className="p-1.5 rounded hover:bg-slate-800"><MoreHorizontal className="w-3.5 h-3.5 text-slate-400" /></button></div></td></tr>)}</tbody></table></div>
+            <div className="overflow-x-auto"><table className="w-full min-w-[900px] text-left"><thead className="bg-[#06101c] text-[10px] text-slate-500"><tr><th className="px-4 py-3"><input type="checkbox" aria-label="Select all" checked={visibleLeads.length > 0 && visibleLeads.every((lead) => selectedRowIds.includes(lead.id))} onChange={() => setSelectedRowIds(visibleLeads.every((lead) => selectedRowIds.includes(lead.id)) ? [] : visibleLeads.map((lead) => lead.id))} /></th><th className="px-2 py-3">Business Name</th><th className="px-2 py-3">Category</th><th className="px-2 py-3">Opportunity</th><th className="px-2 py-3">Score</th><th className="px-2 py-3"><button onClick={() => toggleDataFilter("Website")} className={selectedDataFilters.includes("Website") ? "text-violet-300" : "text-slate-500"}>Website {selectedDataFilters.includes("Website") ? "✓" : "⌄"}</button></th><th className="px-2 py-3"><button onClick={() => toggleDataFilter("Email")} className={selectedDataFilters.includes("Email") ? "text-violet-300" : "text-slate-500"}>Email {selectedDataFilters.includes("Email") ? "✓" : "⌄"}</button></th><th className="px-2 py-3"><button onClick={() => toggleDataFilter("Phone")} className={selectedDataFilters.includes("Phone") ? "text-violet-300" : "text-slate-500"}>Phone {selectedDataFilters.includes("Phone") ? "✓" : "⌄"}</button></th><th className="px-2 py-3"><button onClick={() => toggleDataFilter("WhatsApp")} className={selectedDataFilters.includes("WhatsApp") ? "text-violet-300" : "text-slate-500"}>WhatsApp {selectedDataFilters.includes("WhatsApp") ? "✓" : "⌄"}</button></th><th className="px-2 py-3"><button onClick={() => toggleDataFilter("Google Profile")} className={selectedDataFilters.includes("Google Profile") ? "text-violet-300" : "text-slate-500"}>Google Profile {selectedDataFilters.includes("Google Profile") ? "✓" : "⌄"}</button></th><th className="px-2 py-3">Actions</th></tr></thead><tbody className="divide-y divide-slate-800/80">{visibleLeads.map((lead) => <tr key={lead.id} onClick={() => setSelectedLeadId(lead.id)} className={`text-[10px] cursor-pointer ${selectedLeadId === lead.id ? "bg-violet-500/8" : "hover:bg-slate-900/70"}`}><td className="px-4 py-3"><input type="checkbox" aria-label={`Select ${lead.company}`} checked={selectedRowIds.includes(lead.id)} onClick={(event) => event.stopPropagation()} onChange={() => toggleRowSelection(lead.id)} /></td><td className="px-2 py-3"><div className="font-medium text-white">{lead.company}</div><div className="text-[9px] text-slate-500">{selectedCity ? `${selectedCity}, ` : ""}{selectedCountry || lead.location}</div></td><td className="px-2 py-3 text-slate-400">{lead.category}</td><td className="px-2 py-3"><span className="px-2 py-1 rounded bg-violet-500/20 text-violet-200">{lead.opportunity}</span></td><td className="px-2 py-3"><span className={`inline-grid place-items-center w-8 h-8 rounded-full border ${scoreClass(lead.score)}`}>{lead.score}</span></td><td className="px-2 py-3 text-slate-400"><ExternalLink className="w-3.5 h-3.5" /></td><td className="px-2 py-3 text-slate-400 max-w-[150px] truncate">{lead.email}</td><td className="px-2 py-3 text-slate-400">{lead.phone}</td><td className="px-2 py-3 text-emerald-400"><MessageCircle className="w-4 h-4" /></td><td className="px-2 py-3 text-red-400"><MapPin className="w-4 h-4" /></td><td className="px-2 py-3"><div className="flex items-center gap-1"><button className="p-1.5 rounded hover:bg-slate-800"><Eye className="w-3.5 h-3.5 text-slate-400" /></button><button className="p-1.5 rounded hover:bg-slate-800"><MoreHorizontal className="w-3.5 h-3.5 text-slate-400" /></button></div></td></tr>)}</tbody></table></div>
           </section>
 
           <section className="grid grid-cols-1 xl:grid-cols-3 gap-3">
             <div className="xl:col-span-1 rounded-xl border border-slate-800 bg-[#071321]/90 overflow-hidden"><div className={`h-32 bg-gradient-to-br ${selectedLead.accent} relative`}><div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,.35),transparent_30%)]" /><span className="absolute left-3 bottom-3 px-2 py-1 rounded bg-violet-700 text-[9px] text-white">{selectedLead.opportunity}</span></div><div className="p-4"><div className="flex items-start justify-between"><div><h3 className="text-lg font-semibold text-white">{selectedLead.company}</h3><p className="text-[10px] text-slate-500 mt-1">{selectedLead.category} · {selectedCity ? `${selectedCity}, ` : ""}{selectedCountry || selectedLead.location}</p></div><Star className="w-4 h-4 text-slate-500" /></div><a href={`https://${selectedLead.website}`} className="inline-flex items-center gap-1 text-[10px] text-violet-300 mt-3">View on Google Maps <ExternalLink className="w-3 h-3" /></a><div className="mt-4 text-[10px] text-slate-500">Opportunity Score</div><div className="flex items-end gap-2 mt-1"><span className="text-4xl font-semibold text-emerald-400">{selectedLead.score}</span><span className="text-xs text-slate-500 mb-1">/100</span><span className="mb-1 px-2 py-1 rounded bg-emerald-500/15 text-emerald-300">Very High Opportunity</span></div><p className="text-[10px] text-slate-400 mt-3">This business has a very high potential for your outreach.</p></div></div>
             <div className="rounded-xl border border-slate-800 bg-[#071321]/90 p-4"><h3 className="text-sm font-medium text-white">Why is this a high opportunity?</h3><div className="mt-4 space-y-3 text-[11px]">{[selectedLead.reason, "No online booking system", "Weak social media presence", selectedLead.reviews, "High search volume for this business"].map((reason) => <div key={reason} className="flex items-center gap-2 text-slate-300"><Check className="w-4 h-4 text-emerald-400" />{reason}</div>)}<div className="flex items-center gap-2 text-slate-500"><X className="w-4 h-4 text-orange-400" />Competitors have better websites</div></div></div>
-            <div className="rounded-xl border border-slate-800 bg-[#071321]/90 p-4 relative"><button className="absolute right-4 top-4 p-1 rounded-full border border-slate-700 text-slate-400 hover:text-white"><X className="w-4 h-4" /></button><h3 className="text-sm font-medium text-white">Recommended Service / Offer</h3><div className="mt-5 flex items-center gap-2 text-violet-300"><Sparkles className="w-5 h-5" />{selectedLead.service}</div><p className="text-[11px] text-slate-400 leading-relaxed mt-4">Perfect opportunity to offer a professional service that builds trust and drives more customers.</p><button className="mt-5 inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-violet-600 text-xs font-semibold text-white hover:bg-violet-500"><Mail className="w-4 h-4" />Use for Outreach</button></div>
+            <div className="rounded-xl border border-slate-800 bg-[#071321]/90 p-4 relative"><button className="absolute right-4 top-4 p-1 rounded-full border border-slate-700 text-slate-400 hover:text-white"><X className="w-4 h-4" /></button><h3 className="text-sm font-medium text-white">Recommended Service / Offer</h3><div className="mt-5 flex items-center gap-2 text-violet-300"><Sparkles className="w-5 h-5" />{selectedLead.service}</div><p className="text-[11px] text-slate-400 leading-relaxed mt-4">Perfect opportunity to offer a professional service that builds trust and drives more customers.</p><button onClick={handleUseForOutreach} className="mt-5 inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-violet-600 text-xs font-semibold text-white hover:bg-violet-500"><Mail className="w-4 h-4" />Use for Outreach</button></div>
           </section>
 
           <section className="rounded-xl border border-slate-800 bg-[#071321]/90 overflow-hidden"><div className="border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 px-4"><div className="flex items-center gap-5 overflow-x-auto">{["Business Info", "Contact & Business Data", "Opportunity Insights", "Notes", "Outreach History"].map((tab, index) => <button key={tab} className={`py-4 text-[10px] whitespace-nowrap border-b-2 ${index === 0 ? "text-violet-300 border-violet-500" : "text-slate-500 border-transparent"}`}>{tab}</button>)}</div><div className="flex items-center gap-2 py-2"><span className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-300 grid place-items-center text-[10px]">AI</span><span className="text-xs text-slate-300">AI Outreach Preview</span><select value={outreachLanguage} onChange={(event) => setOutreachLanguage(event.target.value)} className="ml-3 bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-[10px] text-slate-300"><option>English</option><option>Spanish</option><option>French</option></select></div></div><div className="grid grid-cols-1 lg:grid-cols-3"><div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-5 p-5 text-[11px] border-r border-slate-800"><InfoItem icon={Globe2} label="Website" value={`https://${selectedLead.website}`} /><InfoItem icon={MapPin} label="Address" value={`123 Main St, ${selectedCity || "Los Angeles"}, ${selectedRegion || "CA"}, ${selectedCountry || "USA"}`} /><InfoItem icon={CalendarDays} label="Founded" value="2015" /><InfoItem icon={Mail} label="Business Email" value={selectedLead.email} /><InfoItem icon={MapPin} label="Google Business Profile" value="View on Google" /><InfoItem icon={Users} label="Employees" value="11-50" /><InfoItem icon={Phone} label="Phone Number" value={selectedLead.phone} /><InfoItem icon={Building2} label="Category" value={selectedLead.category} /><InfoItem icon={UserRound} label="Owner" value="Marco Rossi" /></div><div className="p-5 bg-[#06101c]"><div className="text-[11px] text-slate-300 leading-relaxed space-y-4"><p>Hi {selectedLead.company},</p><p>I noticed your restaurant in {selectedCity || "Los Angeles"} has a lot of potential, but your website could better showcase your amazing food and attract more customers.</p><p>I’d love to help you improve your online presence and grow your business.</p><p>Would you be open to a quick chat?</p></div><button className="mt-5 w-full py-2.5 rounded-lg border border-emerald-500/50 text-emerald-300 text-xs hover:bg-emerald-500/10">Generate {outreachLanguage} version</button></div></div></section>

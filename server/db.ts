@@ -2,6 +2,8 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2/promise";
 import * as schema from "../drizzle/schema";
+export * from "../drizzle/schema";
+export { eq, desc, and, or } from "drizzle-orm";
 
 let pool: ReturnType<typeof mysql.createPool> | null = null;
 let db: any = null;
@@ -204,4 +206,11 @@ export async function createCampaign(userId: number, input: Omit<schema.InsertCa
   const database = await getDb();
   if (!database) throw new Error("Database is not configured");
   return database.insert(schema.campaigns).values({ ...input, userId });
+}
+
+export async function insertIntoOutreachLists(values: schema.InsertOutreachListItem[]) {
+  const database = await getDb();
+  if (!database) throw new Error("Database is not configured");
+  if (values.length === 0) return;
+  await database.insert(schema.outreachLists).values(values);
 }

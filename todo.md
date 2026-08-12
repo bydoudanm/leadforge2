@@ -58,3 +58,9 @@
 - [x] Relocate Advanced Filters to the Results section toolbar (next to Export and Columns) in LeadSearch and CompanyLeadSearch
 - [x] Bind requested search count to dynamically generate the displayed result count and dataset
 - [x] Run typecheck, tests, build, and save checkpoint for the search controls update
+
+- [x] Implement combined result filtering (opportunity tabs + contact/data availability column filters) in LeadSearch and CompanyLeadSearch
+- [x] Wire selected rows to CSV export and Use for Outreach actions
+- [x] Run typecheck, tests, build, and save checkpoint for combined filtering
+
+- [x] Implement persistent outreach state and navigation to Outreach tab when sending selected filtered leads to outreach
