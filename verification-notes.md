@@ -20,3 +20,13 @@
 - 2026-08-12: After adding the internal mode foundation, authenticated browser checks confirmed `/lead-search` still renders the approved individual search interface and `/company-lead-search` renders the same controls, filters, contact options, result structure, and outreach preview. The separate Company Lead Search sidebar item remains directly beneath Lead Search.
 
 - 2026-08-12: Browser console verification confirmed `data-search-mode="company"` on `/company-lead-search` and `data-search-mode="individual"` on `/lead-search`. The mode values are architectural only and do not alter current search behavior.
+
+- 2026-08-12: Authenticated browser validation on `/lead-search` confirmed the new blank-by-default `Leads to find` number field, the relocated `Search Leads` button in the contact-section footer, and `Advanced Filters` beside `Export` and `Columns` in the Results toolbar. Entering `170` and searching updated the Results header and All tab to `170 businesses found` / `All (170)` while retaining the existing preview rows.
+
+- 2026-08-12: Authenticated browser validation on `/company-lead-search` confirmed the same blank result-count field, Search Leads placement, and Results-toolbar Advanced Filters / Export / Columns arrangement as Lead Search.
+
+- 2026-08-12: Authenticated browser validation on `/company-lead-search` confirmed entering `170` and pressing Search Leads updates the Results header and All tab to `170 businesses found` / `All (170)` while preserving the copied Company Lead Search layout and preview rows.
+
+- 2026-08-12: Company Lead Search Results toolbar validation confirmed Advanced Filters opens in the Results container beside Export and Columns, with its explanatory filter panel displayed below the toolbar.
+
+- 2026-08-12: Lead Search browser validation confirmed Advanced Filters opens in the Results container beside Export and Columns, matching Company Lead Search.

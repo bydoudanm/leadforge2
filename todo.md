@@ -53,3 +53,8 @@
 
 - [x] Add internal `searchMode` foundation: `individual` for Lead Search and `company` for Company Lead Search without changing current behavior
 - [x] Validate the two independent search routes and save a checkpoint after the prompt-aligned update
+
+- [x] Add user-entered search count input and relocate Search Leads button to match user screenshot in LeadSearch and CompanyLeadSearch
+- [x] Relocate Advanced Filters to the Results section toolbar (next to Export and Columns) in LeadSearch and CompanyLeadSearch
+- [x] Bind requested search count to dynamically generate the displayed result count and dataset
+- [x] Run typecheck, tests, build, and save checkpoint for the search controls update
