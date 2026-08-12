@@ -61,6 +61,7 @@ type User = { id: number; name: string | null; email: string; plan: string };
 type LocationCountry = { code: string; name: string; iso3: string; emoji: string };
 type LocationState = { code: string; name: string; type: string | null };
 type LocationCity = { id: number; name: string };
+type SearchMode = "individual" | "company";
 
 const worldLocations: Record<string, Record<string, string[]>> = {
   "United States": {
@@ -299,6 +300,7 @@ function scoreClass(score: number) {
 }
 
 export default function LeadSearch() {
+  const searchMode: SearchMode = "individual";
   const [, setLocation] = useLocation();
   const [user, setUser] = useState<User | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -446,7 +448,7 @@ export default function LeadSearch() {
   if (!user) return <div className="min-h-screen bg-[#020914] text-slate-300 grid place-items-center">Loading search workspace…</div>;
 
   return (
-    <div className="min-h-screen bg-[#020914] text-slate-200 overflow-x-hidden">
+    <div data-search-mode={searchMode} className="min-h-screen bg-[#020914] text-slate-200 overflow-x-hidden">
       <header className="h-16 border-b border-slate-800/90 bg-[#050d19]/95 flex items-center justify-between px-4 lg:px-6 sticky top-0 z-30">
         <div className="flex items-center gap-3 min-w-[185px]">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-500 grid place-items-center shadow-lg shadow-violet-950/40"><Zap className="w-5 h-5 text-white" /></div>

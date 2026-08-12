@@ -16,3 +16,7 @@
 - Typing `bl` in the blank Business Type field surfaced the visible suggestion `Did you mean Plumber?`, confirming free-text autocomplete behavior.
 
 - 2026-08-12: Authenticated browser verification of the original `/lead-search` route succeeded after the navigation update. The original Lead Search controls, results, and outreach preview still render, and the sidebar now shows `Lead Search` followed by a separate `Company Lead Search` entry.
+
+- 2026-08-12: After adding the internal mode foundation, authenticated browser checks confirmed `/lead-search` still renders the approved individual search interface and `/company-lead-search` renders the same controls, filters, contact options, result structure, and outreach preview. The separate Company Lead Search sidebar item remains directly beneath Lead Search.
+
+- 2026-08-12: Browser console verification confirmed `data-search-mode="company"` on `/company-lead-search` and `data-search-mode="individual"` on `/lead-search`. The mode values are architectural only and do not alter current search behavior.

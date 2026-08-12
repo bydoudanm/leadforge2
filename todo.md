@@ -50,3 +50,6 @@
 - [x] Create `CompanyLeadSearch.tsx` as an independent copy of `LeadSearch.tsx`
 - [x] Add `/company-lead-search` route in `App.tsx` and sidebar navigation item
 - [x] Run typecheck, tests, and build, then save a checkpoint for Company Lead Search
+
+- [x] Add internal `searchMode` foundation: `individual` for Lead Search and `company` for Company Lead Search without changing current behavior
+- [x] Validate the two independent search routes and save a checkpoint after the prompt-aligned update
