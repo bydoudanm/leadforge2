@@ -169,6 +169,72 @@ export async function createApp() {
 
   app.use("/api/dashboard", protectedApi);
 
+  const profileApi = express.Router();
+  profileApi.use(requireUser);
+  profileApi.get("/", async (request: AuthedRequest, response) => {
+    try {
+      const user = await db.getUserById(request.user!.id);
+      if (!user) {
+        response.status(404).json({ error: "User account not found" });
+        return;
+      }
+      response.json(publicUser(user));
+    } catch (error) {
+      safeError(response, error);
+    }
+  });
+  profileApi.patch("/", async (request: AuthedRequest, response) => {
+    const parsed = z.object({
+      name: z.string().trim().min(1, "Name is required").max(120),
+      email: z.string().trim().email("Enter a valid email").transform((value) => value.toLowerCase()),
+    }).safeParse(request.body);
+    if (!parsed.success) {
+      response.status(400).json({ error: parsed.error.issues[0]?.message ?? "Enter valid account details" });
+      return;
+    }
+    try {
+      const existing = await db.getUserByEmail(parsed.data.email);
+      if (existing && existing.id !== request.user!.id) {
+        response.status(409).json({ error: "That email is already in use" });
+        return;
+      }
+      const user = await db.updateUserProfile(request.user!.id, parsed.data);
+      if (!user) {
+        response.status(404).json({ error: "User account not found" });
+        return;
+      }
+      response.json(publicUser(user));
+    } catch (error) {
+      safeError(response, error);
+    }
+  });
+  profileApi.post("/password", async (request: AuthedRequest, response) => {
+    const parsed = z.object({
+      currentPassword: z.string().min(1, "Current password is required"),
+      newPassword: z.string().min(8, "New password must be at least 8 characters").max(128),
+    }).safeParse(request.body);
+    if (!parsed.success) {
+      response.status(400).json({ error: parsed.error.issues[0]?.message ?? "Enter valid password details" });
+      return;
+    }
+    try {
+      const user = await db.getUserById(request.user!.id);
+      if (!user || !verifyPassword(parsed.data.currentPassword, user.passwordHash)) {
+        response.status(401).json({ error: "Current password is incorrect" });
+        return;
+      }
+      if (parsed.data.currentPassword === parsed.data.newPassword) {
+        response.status(400).json({ error: "New password must be different from the current password" });
+        return;
+      }
+      await db.updateUserPassword(user.id, hashPassword(parsed.data.newPassword));
+      response.json({ success: true });
+    } catch (error) {
+      safeError(response, error);
+    }
+  });
+  app.use("/api/profile", profileApi);
+
   if (process.env.NODE_ENV === "test") {
     app.get("*", (_request, response) => response.status(404).send("test app"));
   } else if (process.env.NODE_ENV !== "production") {

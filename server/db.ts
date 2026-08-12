@@ -40,6 +40,25 @@ export async function getUserById(id: number) {
   return rows[0];
 }
 
+export async function updateUserProfile(userId: number, input: { name: string; email: string }) {
+  const database = await getDb();
+  if (!database) throw new Error("Database is not configured");
+  await database
+    .update(schema.users)
+    .set({ name: input.name, email: input.email })
+    .where(eq(schema.users.id, userId));
+  return getUserById(userId);
+}
+
+export async function updateUserPassword(userId: number, passwordHash: string) {
+  const database = await getDb();
+  if (!database) throw new Error("Database is not configured");
+  await database
+    .update(schema.users)
+    .set({ passwordHash })
+    .where(eq(schema.users.id, userId));
+}
+
 export async function createUser(input: schema.InsertUser) {
   const database = await getDb();
   if (!database) throw new Error("Database is not configured");

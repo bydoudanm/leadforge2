@@ -8,4 +8,11 @@
 - [x] Connect Dashboard metrics, charts, and recent leads to persisted data
 - [x] Add dashboard API, authentication, and session persistence Vitest coverage
 - [x] Run typecheck, tests, and production build
-- [ ] Save a final checkpoint for user review
+- [x] Save a final checkpoint for user review
+
+- [x] Add backend database helper and API endpoints for updating profile details and changing passwords
+- [x] Create the protected ProfileSettings page component with account and password update forms
+- [x] Add sidebar navigation links to easily switch between Dashboard and Settings
+- [x] Add Vitest tests for profile updates and password validation
+- [x] Run typecheck, tests, and build, then save a checkpoint for the profile settings feature
+- [ ] Save a webdev checkpoint for the profile settings feature

@@ -7,6 +7,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import { Login, Signup } from "./pages/Auth";
+import ProfileSettings from "./pages/ProfileSettings";
 
 
 function Router() {
@@ -16,6 +17,7 @@ function Router() {
       <Route path={"/login"} component={Login} />
       <Route path={"/signup"} component={Signup} />
       <Route path={"/dashboard"} component={Dashboard} />
+      <Route path={"/settings"} component={ProfileSettings} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
