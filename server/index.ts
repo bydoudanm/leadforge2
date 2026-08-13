@@ -7,6 +7,7 @@ import { z } from "zod";
 import * as db from "./db";
 import { endSession, getRequestUser, hashPassword, startSession, verifyPassword } from "./auth";
 import { isIso2Code, listLocationCities, listLocationCountries, listLocationStates } from "./locationData";
+// Built-in forge LLM proxy helper
 import type { SavedFilterView } from "../drizzle/schema";
 
 type AuthedRequest = Request & { user?: NonNullable<Awaited<ReturnType<typeof getRequestUser>>> };
@@ -98,6 +99,63 @@ export async function createApp() {
     }
   });
   app.use("/api/locations", locationApi);
+
+  const aiApi = express.Router();
+  aiApi.use(requireUser);
+  aiApi.post("/generate-outreach", async (request: AuthedRequest, response) => {
+    const parsed = z.object({
+      parentCompanyName: z.string().min(1),
+      branchName: z.string().min(1),
+      branchCount: z.number().int().default(1),
+      opportunity: z.string().optional(),
+      category: z.string().optional(),
+      location: z.string().optional(),
+      language: z.string().default("English"),
+    }).safeParse(request.body);
+
+    if (!parsed.success) {
+      response.status(400).json({ error: "Invalid outreach generation parameters" });
+      return;
+    }
+
+    const { parentCompanyName, branchName, branchCount, opportunity, category, location, language } = parsed.data;
+
+    try {
+      const prompt = `You are a B2B sales expert. Write a highly personalized, outcome-driven outreach email in ${language} addressed to the CEO or Founder of parent company "${parentCompanyName}", mentioning that their branch "${branchName}" in ${location || "the local market"} (${branchCount} managed locations total) has an identifiable opportunity with respect to "${opportunity || "online presence"}" in the ${category || "business"} sector. Focus on scaling value across all managed branches. Keep it concise, professional, and persuasive.`;
+      
+      const forgeUrl = process.env.BUILT_IN_FORGE_API_URL || "https://forge.api.manus.im";
+      const forgeKey = process.env.BUILT_IN_FORGE_API_KEY || "";
+      const llmResponse = await fetch(`${forgeUrl}/v1/chat/completions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${forgeKey}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-4o",
+          messages: [
+            { role: "system", content: "You write high-converting B2B outreach emails for parent companies of multi-branch businesses." },
+            { role: "user", content: prompt },
+          ],
+        }),
+      });
+
+      if (!llmResponse.ok) {
+        throw new Error(`Forge LLM error: ${llmResponse.statusText}`);
+      }
+
+      const data = await llmResponse.json() as { choices?: Array<{ message?: { content?: string } }> };
+      const content = data.choices?.[0]?.message?.content;
+      const text = typeof content === "string" ? content : `Hi ${parentCompanyName} team,\n\nI noticed ${branchName} is one of ${branchCount} locations for ${parentCompanyName}. There is a strong opportunity to elevate your digital presence across every branch.\n\nWould you be open to a quick discussion?\n\nBest regards,\nGrowth Team`;
+      response.json({ generatedEmail: text });
+    } catch (error) {
+      console.error("[AI Outreach]", error);
+      response.json({
+        generatedEmail: `Hi ${parentCompanyName},\n\nI noticed ${branchName} is one of ${branchCount} managed locations for ${parentCompanyName} in ${location || "your region"}. We specialize in helping multi-location groups scale growth and customer acquisition across all branches.\n\nAre you open to a brief conversation this week?\n\nBest regards,\nGrowth Team`,
+      });
+    }
+  });
+  app.use("/api/ai", aiApi);
 
   const outreachApi = express.Router();
   outreachApi.use(requireUser);

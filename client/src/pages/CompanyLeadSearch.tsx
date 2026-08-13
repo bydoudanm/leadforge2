@@ -424,6 +424,9 @@ export default function CompanyLeadSearch() {
   const [selectedContacts, setSelectedContacts] = useState<string[]>(["Business Email", "Owner / Manager Email", "WhatsApp Number", "Google Business Profile", "Website"]);
   const [selectedEmployeeSize, setSelectedEmployeeSize] = useState("");
   const [selectedAnnualRevenue, setSelectedAnnualRevenue] = useState("");
+  const [selectedEntityType, setSelectedEntityType] = useState("all");
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [generatedAiEmail, setGeneratedAiEmail] = useState("");
   const [selectedLeadId, setSelectedLeadId] = useState(1);
   const [selectedRowIds, setSelectedRowIds] = useState<number[]>([]);
   const [selectedTab, setSelectedTab] = useState("All");
@@ -545,7 +548,7 @@ export default function CompanyLeadSearch() {
   const filteredLeads = useMemo(() => {
     const employeeRange = employeeSizeOptions.find((option) => option.value === selectedEmployeeSize);
     const revenueRange = annualRevenueOptions.find((option) => option.value === selectedAnnualRevenue);
-    const companyMatches = companyLeads.filter((lead) => matchesCompanyProfileFilters(lead, employeeRange, revenueRange));
+    const companyMatches = companyLeads.filter((lead) => matchesCompanyProfileFilters(lead, employeeRange, revenueRange, selectedEntityType));
     return rollUpCompanyResults(filterLeads(companyMatches, selectedTab, selectedDataFilters));
   }, [companyLeads, selectedAnnualRevenue, selectedDataFilters, selectedEmployeeSize, selectedTab]);
   const selectedLead = useMemo(() => filteredLeads.find((lead) => lead.id === selectedLeadId) ?? filteredLeads[0] ?? companyLeads[0], [companyLeads, filteredLeads, selectedLeadId]);
@@ -689,6 +692,35 @@ export default function CompanyLeadSearch() {
     anchor.click();
     URL.revokeObjectURL(url);
     setActionNotice(`${rows.length} filtered result${rows.length === 1 ? "" : "s"} exported.`);
+  };
+
+  const handleGenerateAiEmail = async () => {
+    setAiGenerating(true);
+    setGeneratedAiEmail("");
+    try {
+      const response = await fetch("/api/ai/generate-outreach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          parentCompanyName: selectedCompany.parentCompanyName,
+          branchName: selectedLead.company,
+          branchCount: selectedCompany.branchLocations.length || 1,
+          opportunity: selectedLead.opportunity,
+          category: selectedLead.category,
+          location: selectedLead.location,
+          language: outreachLanguage,
+        }),
+      });
+      const data = await response.json() as { generatedEmail?: string };
+      if (data.generatedEmail) {
+        setGeneratedAiEmail(data.generatedEmail);
+      }
+    } catch (error) {
+      console.error("[AI Generation]", error);
+    } finally {
+      setAiGenerating(false);
+    }
   };
 
   const handleUseForOutreach = async () => {
@@ -891,15 +923,25 @@ export default function CompanyLeadSearch() {
             </div>
           </section>
 
+
+
           <section data-company-filters className="rounded-xl border border-slate-800 bg-[#071321]/90 p-4 lg:p-5">
             <div className="flex items-center justify-between gap-3 mb-3">
               <div>
                 <h2 className="text-sm font-semibold text-white">Company Profile Filters</h2>
-                <p className="text-[10px] text-slate-500 mt-1">Target the parent organization by size and revenue; matching branches roll up into one company result.</p>
+                <p className="text-[10px] text-slate-500 mt-1">Target the parent organization by size, revenue, and entity structure.</p>
               </div>
               <Building2 className="w-4 h-4 text-violet-400" />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <label className="block">
+                <span className="block text-[10px] text-slate-400 mb-1.5">Entity Type</span>
+                <select aria-label="Entity Type filter" value={selectedEntityType} onChange={(event) => setSelectedEntityType(event.target.value)} className="w-full rounded-lg border border-slate-700 bg-[#081724] px-3 py-3 text-xs text-slate-200 outline-none focus:border-violet-500">
+                  <option value="all">All Companies & Branches</option>
+                  <option value="parent">Parent Company Only (Multi-Branch)</option>
+                  <option value="branch">Branch Only (Single Location)</option>
+                </select>
+              </label>
               <label className="block">
                 <span className="block text-[10px] text-slate-400 mb-1.5">Employee count</span>
                 <select aria-label="Company employee count" value={selectedEmployeeSize} onChange={(event) => setSelectedEmployeeSize(event.target.value)} className="w-full rounded-lg border border-slate-700 bg-[#081724] px-3 py-3 text-xs text-slate-200 outline-none focus:border-violet-500">

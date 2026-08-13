@@ -109,3 +109,14 @@
 - [x] Save checkpoint and verify parent-company outreach flow
 - [x] Send a Company Lead Search parent-company result to Outreach in the browser and verify parent company, parent contact, and branch count display correctly
 - [x] Save a fresh checkpoint after the parent-company outreach flow is verified end to end
+
+- [x] Add entity type filter (Parent Company vs Branch) in Company Lead Search
+- [x] Implement dynamic hierarchy detection and rollup for multi-location groups
+- [x] Add AI email generation endpoint and UI workflow for parent-company outreach
+- [x] Add Vitest tests for entity filtering, hierarchy detection, and AI email generation
+- [x] Run typecheck, tests, build, and save checkpoint for the company search expansion
+- [ ] Implement and browser-verify true Parent Company vs Branch filtering behavior in Company Lead Search
+- [ ] Replace hardcoded hierarchy grouping with dynamic parent-company detection/linking logic and add tests
+- [ ] Complete parent-company AI outreach UI with loading and error states, and verify in browser
+- [ ] Add Vitest coverage for entity-type filtering and the `/api/ai/generate-outreach` endpoint
+- [ ] Save a fresh checkpoint after all expansion requirements are verified
