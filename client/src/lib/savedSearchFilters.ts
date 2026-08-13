@@ -13,6 +13,7 @@ export type SavedFilterPayload = {
   selectedRegionCode: string;
   selectedCity: string;
   businessType: string;
+  businessTypeMatchMode?: "suggested" | "exact";
   requestedResultCount: string;
   selectedEmployeeSize?: string;
   selectedAnnualRevenue?: string;

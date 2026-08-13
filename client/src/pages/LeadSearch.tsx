@@ -35,7 +35,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { commonBusinessTypes } from "@/data/globalLocations";
+import { filterBusinessTypeResults, getBusinessTypeSuggestionSummary, getBusinessTypeSuggestions, type BusinessTypeSuggestion } from "@/lib/businessTypeSearch";
 import { availabilityFilterOptions, filterLeads, type AvailabilityFilter } from "@/lib/leadSearchFilters";
 import { buildSavedFilterPayload, type SavedFilterPayload, type SavedFilterView } from "@/lib/savedSearchFilters";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -314,14 +314,6 @@ const topNavItems: ReadonlyArray<readonly [string, ComponentType<{ className?: s
   ["Integrations", Layers3, false],
 ];
 
-const businessTypeAliases: Record<string, string[]> = {
-  Plumber: ["pl", "plu", "plum", "bl"],
-  Restaurant: ["res", "rest", "food"],
-  "Dental Clinic": ["dent", "dental"],
-  "Real Estate Agency": ["real", "estate", "re"],
-  "Digital Marketing Agency": ["marketing", "agency", "digital"],
-};
-
 const contactOptions: ReadonlyArray<readonly [string, ComponentType<{ className?: string }>, boolean]> = [
   ["Business Email", Mail, false],
   ["Owner / Manager Email", UserRound, false],
@@ -372,6 +364,7 @@ export default function LeadSearch() {
   const [selectedCity, setSelectedCity] = useState("");
 
   const [businessType, setBusinessType] = useState("");
+  const [businessTypeMatchMode, setBusinessTypeMatchMode] = useState<"suggested" | "exact">("exact");
   const [businessTypeDropdownOpen, setBusinessTypeDropdownOpen] = useState(false);
   const [selectedOpportunities, setSelectedOpportunities] = useState<string[]>(["Weak Website", "Weak Social Media"]);
   const [selectedContacts, setSelectedContacts] = useState<string[]>(["Business Email", "Owner / Manager Email", "WhatsApp Number", "Google Business Profile", "Website"]);
@@ -438,11 +431,8 @@ export default function LeadSearch() {
     return countries.filter((country) => country.name.toLowerCase().includes(query));
   }, [countries, countryInput]);
 
-  const filteredBusinessTypes = useMemo(() => {
-    const query = businessType.trim().toLowerCase();
-    if (!query) return commonBusinessTypes;
-    return commonBusinessTypes.filter((type) => type.toLowerCase().includes(query) || businessTypeAliases[type]?.some((alias) => alias.startsWith(query))).slice(0, 8);
-  }, [businessType]);
+  const filteredBusinessTypes = useMemo(() => getBusinessTypeSuggestions(businessType), [businessType]);
+  const businessTypeLocationLabel = [selectedCity, selectedRegion, selectedCountry].filter(Boolean).join(", ");
 
   const handleCountrySelect = async (country: LocationCountry) => {
     setSelectedCountry(country.code);
@@ -484,10 +474,21 @@ export default function LeadSearch() {
     }
   };
 
-  const selectedLead = useMemo(() => leads.find((lead) => lead.id === selectedLeadId) ?? leads[0], [selectedLeadId]);
-  const filteredLeads = useMemo(() => filterLeads(leads, selectedTab, selectedDataFilters), [selectedTab, selectedDataFilters]);
+  const businessTypeFilteredLeads = useMemo(() => {
+    const query = businessType.trim();
+    if (!query) return leads;
+    return filterBusinessTypeResults(leads, query, businessTypeMatchMode, (lead) => `${lead.category} ${lead.company}`);
+  }, [businessType, businessTypeMatchMode]);
+  const selectedLead = useMemo(() => {
+    const matchingLead = businessTypeFilteredLeads.find((lead) => lead.id === selectedLeadId);
+    return matchingLead ?? businessTypeFilteredLeads[0] ?? leads[0];
+  }, [businessTypeFilteredLeads, selectedLeadId]);
+  const filteredLeads = useMemo(() => filterLeads(businessTypeFilteredLeads, selectedTab, selectedDataFilters), [businessTypeFilteredLeads, selectedTab, selectedDataFilters]);
   const requestedCount = Number(requestedResultCount);
-  const resultCount = searched && selectedTab === "All" && selectedDataFilters.length === 0 ? requestedCount : filteredLeads.length;
+  const hasBusinessTypeFilter = Boolean(businessType.trim());
+  const resultCount = searched && selectedTab === "All" && selectedDataFilters.length === 0 && !hasBusinessTypeFilter
+    ? requestedCount
+    : Math.min(Number.isInteger(requestedCount) && requestedCount > 0 ? requestedCount : filteredLeads.length, filteredLeads.length);
   const visibleLeads = searched && Number.isInteger(requestedCount) && requestedCount > 0 ? filteredLeads.slice(0, requestedCount) : filteredLeads;
 
   const toggle = (items: string[], value: string, setter: (value: string[]) => void) => {
@@ -505,6 +506,7 @@ export default function LeadSearch() {
     selectedRegionCode,
     selectedCity,
     businessType,
+    businessTypeMatchMode,
     requestedResultCount,
   });
 
@@ -547,6 +549,7 @@ export default function LeadSearch() {
     setSelectedRegionCode(filters.selectedRegionCode || "");
     setSelectedCity(filters.selectedCity || "");
     setBusinessType(filters.businessType || "");
+    setBusinessTypeMatchMode(filters.businessTypeMatchMode || "exact");
     setRequestedResultCount(filters.requestedResultCount || "");
     setSearched(Boolean(filters.requestedResultCount));
     setSavedFilterNotice(`Applied filter “${view.name}”.`);
@@ -788,19 +791,24 @@ export default function LeadSearch() {
                     placeholder="Type a business (e.g. Plumber)…"
                     onChange={(event) => {
                       setBusinessType(event.target.value);
+                      setBusinessTypeMatchMode("exact");
                       setBusinessTypeDropdownOpen(true);
                     }}
                     onFocus={() => setBusinessTypeDropdownOpen(true)}
+                    onBlur={() => window.setTimeout(() => setBusinessTypeDropdownOpen(false), 120)}
                     className="w-full rounded-lg border border-slate-700 bg-[#081724] pl-9 pr-3 py-3 text-xs text-slate-200 outline-none focus:border-violet-500"
                   />
                 </div>
-                {businessTypeDropdownOpen && filteredBusinessTypes.length > 0 && (
-                  <div className="absolute left-0 right-0 mt-1 max-h-52 overflow-y-auto rounded-lg border border-slate-700 bg-[#081724] shadow-xl z-20">
-                    {filteredBusinessTypes.map((type) => (
-                      <button key={type} type="button" onClick={() => { setBusinessType(type); setBusinessTypeDropdownOpen(false); }} className="w-full text-left px-3 py-2 text-xs text-slate-200 hover:bg-violet-600/20 hover:text-white">
-                        {businessType.trim() ? `Did you mean ${type}?` : type}
+                {businessTypeDropdownOpen && businessType.trim() && (
+                  <div className="absolute left-0 right-0 mt-1 overflow-hidden rounded-lg border border-slate-700 bg-[#081724] shadow-xl z-20">
+                    <div className="border-b border-slate-700/80 px-3 py-2 text-[10px] uppercase tracking-wide text-slate-500">Suggested match · AI assistance only</div>
+                    {filteredBusinessTypes.map((suggestion: BusinessTypeSuggestion) => (
+                      <button key={suggestion.label} type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { setBusinessType(suggestion.label); setBusinessTypeMatchMode("suggested"); setBusinessTypeDropdownOpen(false); }} className="w-full px-3 py-2 text-left hover:bg-violet-600/20 hover:text-white">
+                        <span className="block text-xs text-slate-200">{suggestion.label}</span>
+                        <span className="block text-[10px] text-slate-500">{getBusinessTypeSuggestionSummary(suggestion, businessTypeLocationLabel)}</span>
                       </button>
                     ))}
+                    <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { setBusinessTypeMatchMode("exact"); setBusinessTypeDropdownOpen(false); }} className="w-full border-t border-slate-700/80 px-3 py-2 text-left text-xs font-medium text-violet-300 hover:bg-violet-600/20 hover:text-white">Use exactly what I typed: <span className="text-white">{businessType.trim()}</span></button>
                   </div>
                 )}
               </div>
@@ -833,13 +841,15 @@ export default function LeadSearch() {
             <div className="overflow-x-auto"><table className="w-full min-w-[760px] table-fixed text-left"><thead className="bg-[#06101c] text-[10px] text-slate-500"><tr><th className="px-4 py-3"><input type="checkbox" aria-label="Select all" checked={visibleLeads.length > 0 && visibleLeads.every((lead) => selectedRowIds.includes(lead.id))} onChange={() => setSelectedRowIds(visibleLeads.every((lead) => selectedRowIds.includes(lead.id)) ? [] : visibleLeads.map((lead) => lead.id))} /></th><th className="px-2 py-3">Business Name</th><th className="px-2 py-3">Category</th><th className="px-2 py-3">Opportunity</th><th className="px-2 py-3">Score</th><th className="px-2 py-3">Actions</th></tr></thead><tbody className="divide-y divide-slate-800/80">{visibleLeads.map((lead) => <tr key={lead.id} onClick={() => setSelectedLeadId(lead.id)} className={`text-[10px] cursor-pointer ${selectedLeadId === lead.id ? "bg-violet-500/8" : "hover:bg-slate-900/70"}`}><td className="px-4 py-3"><input type="checkbox" aria-label={`Select ${lead.company}`} checked={selectedRowIds.includes(lead.id)} onClick={(event) => event.stopPropagation()} onChange={() => toggleRowSelection(lead.id)} /></td><td className="px-2 py-3"><div className="font-medium text-white">{lead.company}</div><div className="text-[9px] text-slate-500">{selectedCity ? `${selectedCity}, ` : ""}{selectedCountry || lead.location}</div></td><td className="px-2 py-3 text-slate-400">{lead.category}</td><td className="px-2 py-3"><span className="px-2 py-1 rounded bg-violet-500/20 text-violet-200">{lead.opportunity}</span></td><td className="px-2 py-3"><span className={`inline-grid place-items-center w-8 h-8 rounded-full border ${scoreClass(lead.score)}`}>{lead.score}</span></td><td className="px-2 py-3"><div className="flex items-center gap-1"><button className="p-1.5 rounded hover:bg-slate-800"><Eye className="w-3.5 h-3.5 text-slate-400" /></button><button className="p-1.5 rounded hover:bg-slate-800"><MoreHorizontal className="w-3.5 h-3.5 text-slate-400" /></button></div></td></tr>)}</tbody></table></div>
           </section>
 
+          {filteredLeads.length > 0 ? <>
           <section className="grid grid-cols-1 xl:grid-cols-3 gap-3">
             <div className="xl:col-span-1 rounded-xl border border-slate-800 bg-[#071321]/90 overflow-hidden"><div className={`h-32 bg-gradient-to-br ${selectedLead.accent} relative`}><div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,.35),transparent_30%)]" /><span className="absolute left-3 bottom-3 px-2 py-1 rounded bg-violet-700 text-[9px] text-white">{selectedLead.opportunity}</span></div><div className="p-4"><div className="flex items-start justify-between"><div><h3 className="text-lg font-semibold text-white">{selectedLead.company}</h3><p className="text-[10px] text-slate-500 mt-1">{selectedLead.category} · {selectedCity ? `${selectedCity}, ` : ""}{selectedCountry || selectedLead.location}</p></div><Star className="w-4 h-4 text-slate-500" /></div><a href={`https://${selectedLead.website}`} className="inline-flex items-center gap-1 text-[10px] text-violet-300 mt-3">View on Google Maps <ExternalLink className="w-3 h-3" /></a><div className="mt-4 text-[10px] text-slate-500">Opportunity Score</div><div className="flex items-end gap-2 mt-1"><span className="text-4xl font-semibold text-emerald-400">{selectedLead.score}</span><span className="text-xs text-slate-500 mb-1">/100</span><span className="mb-1 px-2 py-1 rounded bg-emerald-500/15 text-emerald-300">Very High Opportunity</span></div><p className="text-[10px] text-slate-400 mt-3">This business has a very high potential for your outreach.</p></div></div>
             <div className="rounded-xl border border-slate-800 bg-[#071321]/90 p-4"><h3 className="text-sm font-medium text-white">Why is this a high opportunity?</h3><div className="mt-4 space-y-3 text-[11px]">{[selectedLead.reason, "No online booking system", "Weak social media presence", selectedLead.reviews, "High search volume for this business"].map((reason) => <div key={reason} className="flex items-center gap-2 text-slate-300"><Check className="w-4 h-4 text-emerald-400" />{reason}</div>)}<div className="flex items-center gap-2 text-slate-500"><X className="w-4 h-4 text-orange-400" />Competitors have better websites</div></div></div>
             <div className="rounded-xl border border-slate-800 bg-[#071321]/90 p-4 relative"><button className="absolute right-4 top-4 p-1 rounded-full border border-slate-700 text-slate-400 hover:text-white"><X className="w-4 h-4" /></button><h3 className="text-sm font-medium text-white">Recommended Service / Offer</h3><div className="mt-5 flex items-center gap-2 text-violet-300"><Sparkles className="w-5 h-5" />{selectedLead.service}</div><p className="text-[11px] text-slate-400 leading-relaxed mt-4">Perfect opportunity to offer a professional service that builds trust and drives more customers.</p></div>
           </section>
 
-          <section className="rounded-xl border border-slate-800 bg-[#071321]/90 overflow-hidden"><div className="border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 px-4"><div className="flex items-center gap-5 overflow-x-auto">{["Business Info", "Contact & Business Data", "Opportunity Insights", "Notes", "Outreach History"].map((tab, index) => <button key={tab} className={`py-4 text-[10px] whitespace-nowrap border-b-2 ${index === 0 ? "text-violet-300 border-violet-500" : "text-slate-500 border-transparent"}`}>{tab}</button>)}</div><div className="flex items-center gap-2 py-2"><span className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-300 grid place-items-center text-[10px]">AI</span><span className="text-xs text-slate-300">AI Outreach Preview</span><select value={outreachLanguage} onChange={(event) => setOutreachLanguage(event.target.value)} className="ml-3 bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-[10px] text-slate-300"><option>English</option><option>Spanish</option><option>French</option></select></div></div><div className="grid grid-cols-1 lg:grid-cols-3"><div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-5 p-5 text-[11px] border-r border-slate-800"><InfoItem icon={Globe2} label="Website" value={`https://${selectedLead.website}`} /><InfoItem icon={MapPin} label="Address" value={`123 Main St, ${selectedCity || "Los Angeles"}, ${selectedRegion || "CA"}, ${selectedCountry || "USA"}`} /><InfoItem icon={CalendarDays} label="Founded" value="2015" /><InfoItem icon={Mail} label="Business Email" value={selectedLead.email} /><InfoItem icon={MapPin} label="Google Business Profile" value="View on Google" /><InfoItem icon={Users} label="Employees" value="11-50" /><InfoItem icon={Phone} label="Phone Number" value={selectedLead.phone} /><InfoItem icon={Building2} label="Category" value={selectedLead.category} /><InfoItem icon={UserRound} label="Owner" value="Marco Rossi" /></div><div className="p-5 bg-[#06101c]"><div className="text-[11px] text-slate-300 leading-relaxed space-y-4"><p>Hi {selectedLead.company},</p><p>I noticed your restaurant in {selectedCity || "Los Angeles"} has a lot of potential, but your website could better showcase your amazing food and attract more customers.</p><p>I’d love to help you improve your online presence and grow your business.</p><p>Would you be open to a quick chat?</p></div><button className="mt-5 w-full py-2.5 rounded-lg border border-emerald-500/50 text-emerald-300 text-xs hover:bg-emerald-500/10">Generate {outreachLanguage} version</button></div></div></section>
+          <section className="rounded-xl border border-slate-800 bg-[#071321]/90 overflow-hidden"><div className="border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 px-4"><div className="flex items-center gap-5 overflow-x-auto">{["Business Info", "Contact & Business Data", "Opportunity Insights", "Notes", "Outreach History"].map((tab, index) => <button key={tab} className={`py-4 text-[10px] whitespace-nowrap border-b-2 ${index === 0 ? "text-violet-300 border-violet-500" : "text-slate-500 border-transparent"}`}>{tab}</button>)}</div><div className="flex items-center gap-2 py-2"><span className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-300 grid place-items-center text-[10px]">AI</span><span className="text-xs text-slate-300">AI Outreach Preview</span><select value={outreachLanguage} onChange={(event) => setOutreachLanguage(event.target.value)} className="ml-3 bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-[10px] text-slate-300"><option>English</option><option>Spanish</option><option>French</option></select></div></div><div className="grid grid-cols-1 lg:grid-cols-3"><div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-5 p-5 text-[11px] border-r border-slate-800"><InfoItem icon={Globe2} label="Website" value={`https://${selectedLead.website}`} /><InfoItem icon={MapPin} label="Address" value={`123 Main St, ${selectedCity || "Los Angeles"}, ${selectedRegion || "CA"}, ${selectedCountry || "USA"}`} /><InfoItem icon={CalendarDays} label="Founded" value="2015" /><InfoItem icon={Mail} label="Business Email" value={selectedLead.email} /><InfoItem icon={MapPin} label="Google Business Profile" value="View on Google" /><InfoItem icon={Users} label="Employees" value="11-50" /><InfoItem icon={Phone} label="Phone Number" value={selectedLead.phone} /><InfoItem icon={Building2} label="Category" value={selectedLead.category} /><InfoItem icon={UserRound} label="Owner" value="Marco Rossi" /></div><div className="p-5 bg-[#06101c]"><div className="text-[11px] text-slate-300 leading-relaxed space-y-4"><p>Hi {selectedLead.company},</p><p>I noticed your restaurant in {selectedCity || "Los Angeles"} has a lot of potential, but your website could better showcase your amazing food and attract more customers.</p><p>I’d love to help you improve your online presence and grow your business.</p><p>Would you be open to a quick chat?</p></div><button className="mt-5 w-full py-2.5 rounded-lg border border-emerald-500/50 text-emerald-300 text-xs hover:bg-emerald-500/10">Generate {outreachLanguage} version</button></div></div>          </section>
+          </> : <section className="rounded-xl border border-slate-800 bg-[#071321]/90 p-6 text-center text-sm text-slate-400">No businesses match <span className="font-medium text-white">{businessType}</span> with the current opportunity and contact filters.</section>}
         </main>
       </div>
     </div>

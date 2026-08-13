@@ -124,3 +124,11 @@
 - [x] Relocate "Use for Outreach" button into the Results toolbar next to Export and Columns
 - [x] Clean up redundant Saved Filters heading and refine the Saved Filters input container
 - [x] Verify both Lead Search and Company Lead Search routes and run test suite
+
+- [x] Convert Business Type into unrestricted free-text search with intelligent autocomplete suggestions and "Use exactly what I typed" option in LeadSearch and CompanyLeadSearch
+- [x] Verify search execution, result scoring, and test suite for custom business types
+- [x] Save checkpoint after free-text business type update
+- [x] Wire Business Type and match mode into Lead Search result filtering so free-form queries affect returned rows
+- [x] Wire Business Type and match mode into Company Lead Search result filtering while preserving parent/branch rollups
+- [x] Add Vitest coverage proving suggested-match and exact-query Business Type searches change result sets and scoring inputs
+- [x] Reverify custom Business Type execution and result counts in both search routes
