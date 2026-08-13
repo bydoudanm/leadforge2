@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import ThemeToggle from "@/components/ThemeToggle";
 import { ArrowLeft, BellRing, Building2, CheckCircle2, KeyRound, LayoutDashboard, LogOut, Menu, Save, Search, Settings, UserRound } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { useLocation } from "wouter";
@@ -191,7 +192,10 @@ export default function ProfileSettings() {
       <main className="flex-1 min-w-0 overflow-auto">
         <header className="bg-slate-900 border-b border-slate-800 px-8 py-6 flex items-center justify-between sticky top-0 z-10">
           <div><h1 className="text-3xl font-bold text-white">Profile Settings</h1><p className="text-slate-400 text-sm mt-1">Manage your account details and security.</p></div>
-          <button onClick={() => setSidebarOpen((open) => !open)} className="p-2 hover:bg-slate-800 rounded-lg" aria-label="Toggle sidebar"><Menu className="w-6 h-6 text-slate-400" /></button>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <button onClick={() => setSidebarOpen((open) => !open)} className="p-2 hover:bg-slate-800 rounded-lg" aria-label="Toggle sidebar"><Menu className="w-6 h-6 text-slate-400" /></button>
+          </div>
         </header>
 
         <div className="p-8 max-w-4xl space-y-6">

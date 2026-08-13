@@ -15,6 +15,7 @@ import {
 import { ArrowRight, LogOut, Mail, Menu, Target, TrendingUp, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
+import ThemeToggle from "@/components/ThemeToggle";
 
 type User = { id: number; name: string | null; email: string; plan: string };
 type Lead = {
@@ -131,7 +132,10 @@ export default function Dashboard() {
       <main className="flex-1 min-w-0 overflow-auto">
         <header className="bg-slate-900 border-b border-slate-800 px-8 py-6 flex items-center justify-between sticky top-0 z-10">
           <div><h1 className="text-3xl font-bold text-white">Dashboard</h1><p className="text-slate-400 text-sm mt-1">Welcome back, {user.name || user.email}</p></div>
-          <button onClick={() => setSidebarOpen((open) => !open)} className="p-2 hover:bg-slate-800 rounded-lg"><Menu className="w-6 h-6 text-slate-400" /></button>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <button onClick={() => setSidebarOpen((open) => !open)} className="p-2 hover:bg-slate-800 rounded-lg"><Menu className="w-6 h-6 text-slate-400" /></button>
+          </div>
         </header>
 
         <div className="p-8 space-y-8">

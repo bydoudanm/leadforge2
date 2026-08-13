@@ -78,3 +78,7 @@
 - [x] Remove hidden obsolete Saved Filters markup from LeadSearch and CompanyLeadSearch
 - [x] Reverify both routes and Media Opportunity filtering after the final control relocation
 - [x] Adjust the Results control layout so Saved Filters visibly occupies the former Website/Business Email region and Export/Columns visibly occupies the former Phone/WhatsApp/Google Profile region in both search pages, then capture browser verification of the exact placement.
+
+- [ ] Add a consistent Dark/White theme architecture with a user-selectable theme toggle while preserving existing layouts, branding, and functionality
+- [ ] Verify theme persistence and contrast across public landing, authenticated dashboard, settings, Lead Search, Company Lead Search, and Outreach routes
+- [ ] Run theme-related tests, typecheck, production build, and save a checkpoint

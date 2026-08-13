@@ -1,10 +1,17 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-type Theme = "light" | "dark";
+export type Theme = "dark" | "white";
+
+export const THEME_STORAGE_KEY = "leadforge-theme";
+
+export function resolveTheme(storedTheme: string | null, defaultTheme: Theme = "dark"): Theme {
+  return storedTheme === "dark" || storedTheme === "white" ? storedTheme : defaultTheme;
+}
 
 interface ThemeContextType {
   theme: Theme;
-  toggleTheme?: () => void;
+  setTheme: (theme: Theme) => void;
+  toggleTheme: () => void;
   switchable: boolean;
 }
 
@@ -18,38 +25,35 @@ interface ThemeProviderProps {
 
 export function ThemeProvider({
   children,
-  defaultTheme = "light",
-  switchable = false,
+  defaultTheme = "dark",
+  switchable = true,
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(() => {
-    if (switchable) {
-      const stored = localStorage.getItem("theme");
-      return (stored as Theme) || defaultTheme;
-    }
-    return defaultTheme;
+    if (!switchable || typeof window === "undefined") return defaultTheme;
+    return resolveTheme(window.localStorage.getItem(THEME_STORAGE_KEY), defaultTheme);
   });
 
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === "dark") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
+    root.dataset.theme = theme;
+    root.classList.toggle("dark", theme === "dark");
+    root.style.colorScheme = theme === "dark" ? "dark" : "light";
 
     if (switchable) {
-      localStorage.setItem("theme", theme);
+      window.localStorage.setItem(THEME_STORAGE_KEY, theme);
     }
   }, [theme, switchable]);
 
-  const toggleTheme = switchable
-    ? () => {
-        setTheme(prev => (prev === "light" ? "dark" : "light"));
-      }
-    : undefined;
+  const updateTheme = (nextTheme: Theme) => {
+    if (switchable) setTheme(nextTheme);
+  };
+
+  const toggleTheme = () => {
+    if (switchable) setTheme((currentTheme) => (currentTheme === "dark" ? "white" : "dark"));
+  };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, switchable }}>
+    <ThemeContext.Provider value={{ theme, setTheme: updateTheme, toggleTheme, switchable }}>
       {children}
     </ThemeContext.Provider>
   );

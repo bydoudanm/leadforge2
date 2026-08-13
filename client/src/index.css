@@ -78,6 +78,92 @@
   --sidebar-ring: #3b82f6;
 }
 
+html[data-theme="white"] {
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --sidebar-primary: #2563eb;
+  --sidebar-primary-foreground: #ffffff;
+  --chart-1: #2563eb;
+  --chart-2: #0891b2;
+  --chart-3: #7c3aed;
+  --chart-4: #0f766e;
+  --chart-5: #c2410c;
+  --background: #f6f8fc;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --secondary: #eaf0f7;
+  --secondary-foreground: #334155;
+  --muted: #e8eef5;
+  --muted-foreground: #64748b;
+  --accent: #e0f2fe;
+  --accent-foreground: #075985;
+  --destructive: #dc2626;
+  --destructive-foreground: #fef2f2;
+  --border: #d7e0eb;
+  --input: #cbd5e1;
+  --ring: #2563eb;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #0f172a;
+  --sidebar-accent: #eaf2ff;
+  --sidebar-accent-foreground: #1d4ed8;
+  --sidebar-border: #d7e0eb;
+  --sidebar-ring: #2563eb;
+  --theme-page: #f6f8fc;
+  --theme-surface: #ffffff;
+  --theme-surface-muted: #eef3f8;
+  --theme-strong: #0f172a;
+  --theme-body: #334155;
+  --theme-subtle: #64748b;
+  --theme-line: #d7e0eb;
+}
+
+/* Compatibility mapping keeps the existing premium layout intact while making White mode readable. */
+html[data-theme="white"] .bg-slate-950 { background-color: var(--theme-page) !important; }
+html[data-theme="white"] .bg-slate-950\/40 { background-color: rgba(255, 255, 255, 0.72) !important; }
+html[data-theme="white"] .bg-slate-950\/70 { background-color: rgba(255, 255, 255, 0.86) !important; }
+html[data-theme="white"] .bg-slate-900 { background-color: var(--theme-surface) !important; }
+html[data-theme="white"] .bg-slate-900\/50,
+html[data-theme="white"] .bg-slate-900\/60,
+html[data-theme="white"] .bg-slate-900\/80,
+html[data-theme="white"] .bg-slate-900\/95 { background-color: rgba(255, 255, 255, 0.9) !important; }
+html[data-theme="white"] .bg-slate-800 { background-color: var(--theme-surface-muted) !important; }
+html[data-theme="white"] .bg-slate-800\/50,
+html[data-theme="white"] .bg-slate-800\/60,
+html[data-theme="white"] .bg-slate-800\/70 { background-color: rgba(226, 234, 243, 0.76) !important; }
+html[data-theme="white"] [class*="bg-[#020914]"] { background-color: var(--theme-page) !important; }
+html[data-theme="white"] [class*="bg-[#050d19]"] { background-color: rgba(255, 255, 255, 0.96) !important; }
+html[data-theme="white"] [class*="bg-[#06101c]"] { background-color: #eef3f8 !important; }
+html[data-theme="white"] [class*="bg-[#071321]"] { background-color: #f5f8fc !important; }
+html[data-theme="white"] [class*="bg-[#081724]"] { background-color: #ffffff !important; }
+html[data-theme="white"] .text-white { color: var(--theme-strong) !important; }
+html[data-theme="white"] .text-slate-200 { color: #1e293b !important; }
+html[data-theme="white"] .text-slate-300 { color: #475569 !important; }
+html[data-theme="white"] .text-slate-400 { color: #64748b !important; }
+html[data-theme="white"] .text-slate-500 { color: #718096 !important; }
+html[data-theme="white"] .border-slate-800,
+html[data-theme="white"] .border-slate-800\/80,
+html[data-theme="white"] .border-slate-800\/90 { border-color: var(--theme-line) !important; }
+html[data-theme="white"] .border-slate-700,
+html[data-theme="white"] .border-slate-700\/30,
+html[data-theme="white"] .border-slate-700\/50,
+html[data-theme="white"] .border-slate-700\/70 { border-color: #cbd5e1 !important; }
+html[data-theme="white"] [class~="hover:bg-slate-800"]:hover,
+html[data-theme="white"] [class~="hover:bg-slate-800/70"]:hover,
+html[data-theme="white"] [class~="hover:bg-slate-900/60"]:hover { background-color: #e8eef5 !important; }
+html[data-theme="white"] [class~="hover:text-white"]:hover { color: var(--theme-strong) !important; }
+html[data-theme="white"] .gradient-ai { background-image: linear-gradient(135deg, #eff6ff, #ffffff 55%, #f0fdfa) !important; }
+html[data-theme="white"] .bg-blue-600.text-white,
+html[data-theme="white"] .bg-cyan-600.text-white,
+html[data-theme="white"] .bg-violet-600.text-white,
+html[data-theme="white"] .bg-purple-600.text-white,
+html[data-theme="white"] [class*="bg-gradient-"] .text-white,
+html[data-theme="white"] [class*="bg-blue-"] .text-white,
+html[data-theme="white"] [class*="bg-violet-"] .text-white,
+html[data-theme="white"] [class*="bg-cyan-"] .text-white { color: #ffffff !important; }
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

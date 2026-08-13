@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import ThemeToggle from "@/components/ThemeToggle";
 import { ArrowLeft, LockKeyhole, Sparkles } from "lucide-react";
 import { FormEvent, useState } from "react";
 import { Link, useLocation } from "wouter";
@@ -42,7 +43,10 @@ export function Auth({ mode }: { mode: "login" | "signup" }) {
     <div className="min-h-screen bg-slate-950 text-white relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(37,99,235,0.22),transparent_42%),radial-gradient(circle_at_bottom_left,rgba(6,182,212,0.12),transparent_36%)]" />
       <div className="relative max-w-6xl mx-auto px-6 py-8">
-        <Link href="/" className="inline-flex items-center gap-2 text-slate-400 hover:text-white text-sm"><ArrowLeft className="w-4 h-4" /> Back to LeadForge</Link>
+        <div className="flex items-center justify-between gap-4">
+          <Link href="/" className="inline-flex items-center gap-2 text-slate-400 hover:text-white text-sm"><ArrowLeft className="w-4 h-4" /> Back to LeadForge</Link>
+          <ThemeToggle />
+        </div>
         <div className="min-h-[calc(100vh-96px)] grid place-items-center py-12">
           <div className="w-full max-w-md bg-slate-900/80 border border-slate-700/70 rounded-2xl p-8 shadow-2xl shadow-blue-950/20 backdrop-blur">
             <div className="flex items-center gap-3 mb-8"><div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-400 grid place-items-center"><Sparkles className="w-5 h-5 text-white" /></div><div><p className="font-bold text-lg">LeadForge</p><p className="text-xs text-slate-400">Your client acquisition command center</p></div></div>

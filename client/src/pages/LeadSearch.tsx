@@ -38,6 +38,7 @@ import {
 import { commonBusinessTypes } from "@/data/globalLocations";
 import { availabilityFilterOptions, filterLeads, type AvailabilityFilter } from "@/lib/leadSearchFilters";
 import { buildSavedFilterPayload, type SavedFilterPayload, type SavedFilterView } from "@/lib/savedSearchFilters";
+import ThemeToggle from "@/components/ThemeToggle";
 import type { ComponentType, ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
@@ -685,6 +686,7 @@ export default function LeadSearch() {
           ))}
         </nav>
         <div className="flex items-center gap-2">
+          <ThemeToggle compact />
           <button className="hidden sm:grid place-items-center w-8 h-8 rounded-lg border border-slate-800 text-slate-400 hover:text-white"><Settings className="w-4 h-4" /></button>
           <button className="grid place-items-center w-8 h-8 rounded-lg bg-violet-600 text-white shadow-lg shadow-violet-900/30"><Zap className="w-4 h-4" /></button>
           <button onClick={() => setLocation('/settings')} className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full hover:bg-slate-800/80"><span className="w-7 h-7 rounded-full bg-slate-700 border border-slate-500 grid place-items-center text-[10px] font-bold">{(user.name ?? user.email).slice(0, 2).toUpperCase()}</span><span className="hidden sm:block text-xs text-slate-300">My Account</span><ChevronDown className="w-3.5 h-3.5 text-slate-500" /></button>

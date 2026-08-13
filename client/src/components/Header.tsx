@@ -3,6 +3,7 @@ import { Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
+import ThemeToggle from '@/components/ThemeToggle';
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
@@ -58,6 +59,7 @@ export default function Header() {
           transition={{ delay: 0.2, duration: 0.6 }}
           className="hidden md:flex items-center gap-3"
         >
+          <ThemeToggle compact />
           <Button
             variant="ghost"
             className="text-slate-300 hover:text-white"
@@ -99,7 +101,11 @@ export default function Header() {
               </a>
             ))}
           </nav>
-          <div className="space-y-2 border-t border-slate-700/50 pt-4">
+          <div className="flex items-center justify-between border-t border-slate-700/50 pt-4 mb-3">
+            <span className="text-xs text-slate-400">Theme</span>
+            <ThemeToggle />
+          </div>
+          <div className="space-y-2">
             <Button
               variant="ghost"
               className="w-full text-slate-300 hover:text-white justify-start"

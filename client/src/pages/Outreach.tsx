@@ -2,6 +2,7 @@ import { Activity, BarChart3, Building2, Download, Layers3, Mail, Search, Shield
 import type { ComponentType } from "react";
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
+import ThemeToggle from "@/components/ThemeToggle";
 
 type User = { id: number; name: string | null; email: string; plan: string };
 type OutreachItem = {
@@ -90,6 +91,7 @@ export default function Outreach() {
           ))}
         </nav>
         <div className="flex items-center gap-3">
+          <ThemeToggle compact />
           <button onClick={() => setLocation("/settings")} className="p-2 rounded-lg border border-slate-800 text-slate-400 hover:text-white"><ShieldCheck className="w-4 h-4" /></button>
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-900/50 text-xs">
             <div className="w-6 h-6 rounded-full bg-violet-600 text-white grid place-items-center font-semibold">{user.name?.[0] || user.email[0].toUpperCase()}</div>
