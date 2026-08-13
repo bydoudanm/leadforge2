@@ -79,6 +79,13 @@
 - [x] Reverify both routes and Media Opportunity filtering after the final control relocation
 - [x] Adjust the Results control layout so Saved Filters visibly occupies the former Website/Business Email region and Export/Columns visibly occupies the former Phone/WhatsApp/Google Profile region in both search pages, then capture browser verification of the exact placement.
 
-- [ ] Add a consistent Dark/White theme architecture with a user-selectable theme toggle while preserving existing layouts, branding, and functionality
-- [ ] Verify theme persistence and contrast across public landing, authenticated dashboard, settings, Lead Search, Company Lead Search, and Outreach routes
-- [ ] Run theme-related tests, typecheck, production build, and save a checkpoint
+- [x] Add a consistent Dark/White theme architecture with a user-selectable theme toggle while preserving existing layouts, branding, and functionality
+- [x] Verify theme persistence and contrast across public landing, authenticated dashboard, settings, Lead Search, Company Lead Search, and Outreach routes
+- [x] Run theme-related tests, typecheck, production build, and save a checkpoint
+- [x] Verify White-mode persistence and contrast on Company Lead Search after navigating from another route
+- [x] Verify Dark/White theme switching and readable contrast on the Outreach queue route
+- [x] Verify White-mode persistence on Company Lead Search by navigating from a White-mode route
+- [x] Toggle theme between Dark and White on Outreach and verify contrast in both modes
+- [x] Record console theme state and surface color for both Dark and White modes on /outreach
+- [x] Capture distinct Dark and White state readings via console on /outreach
+- [x] Capture explicit console readings for both White and Dark modes on /outreach
