@@ -39,6 +39,7 @@ import { commonBusinessTypes } from "@/data/globalLocations";
 import { availabilityFilterOptions, filterLeads, type AvailabilityFilter } from "@/lib/leadSearchFilters";
 import { matchesCompanyProfileFilters } from "@/lib/companyLeadFilters";
 import { buildParentCompanyOutreachRows, getCompanyHierarchy, rollUpCompanyResults } from "@/lib/companyHierarchy";
+import { detectAndGroupCompanies } from "@/lib/dynamicHierarchy";
 import { buildSavedFilterPayload, type SavedFilterPayload, type SavedFilterView } from "@/lib/savedSearchFilters";
 import ThemeToggle from "@/components/ThemeToggle";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -549,8 +550,12 @@ export default function CompanyLeadSearch() {
     const employeeRange = employeeSizeOptions.find((option) => option.value === selectedEmployeeSize);
     const revenueRange = annualRevenueOptions.find((option) => option.value === selectedAnnualRevenue);
     const companyMatches = companyLeads.filter((lead) => matchesCompanyProfileFilters(lead, employeeRange, revenueRange, selectedEntityType));
-    return rollUpCompanyResults(filterLeads(companyMatches, selectedTab, selectedDataFilters));
-  }, [companyLeads, selectedAnnualRevenue, selectedDataFilters, selectedEmployeeSize, selectedTab]);
+    const filtered = filterLeads(companyMatches, selectedTab, selectedDataFilters);
+    if (selectedEntityType === "branch") {
+      return filtered;
+    }
+    return rollUpCompanyResults(filtered);
+  }, [companyLeads, selectedAnnualRevenue, selectedDataFilters, selectedEmployeeSize, selectedTab, selectedEntityType]);
   const selectedLead = useMemo(() => filteredLeads.find((lead) => lead.id === selectedLeadId) ?? filteredLeads[0] ?? companyLeads[0], [companyLeads, filteredLeads, selectedLeadId]);
   const selectedCompany = useMemo(() => getCompanyHierarchy(selectedLead.parentCompanyId), [selectedLead.parentCompanyId]);
   const requestedCount = Number(requestedResultCount);
