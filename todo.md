@@ -93,3 +93,12 @@
 - [x] Audit Company Lead Search against PROMPT 1 requirements (added professional header block, verified `searchMode = "company"`, sidebar position, and shared search foundation)
 - [x] Document PROMPT 1 compliance checklist against current implementation
 - [x] Run test suite, typecheck, and build to verify audit changes
+
+- [x] Add explanatory tooltips to advanced social-media filters without changing the approved filter layout
+- [x] Add Company Lead Search employee-count and annual-revenue filter state, controls, and combined filtering
+- [x] Verify Company Lead Search and Individual Lead Search behavior, then run tests and save a checkpoint
+- [x] Keep the Company Lead Search selected lead and detail panel synchronized with the filtered result set
+- [x] Browser-verify annual-revenue filtering and its combined behavior
+- [x] Save a new checkpoint after the tooltip and company-filter fixes
+- [x] Verify annual revenue combined with an opportunity tab and a contact-data filter in Company Lead Search
+- [ ] Save a fresh checkpoint after combined-filter verification

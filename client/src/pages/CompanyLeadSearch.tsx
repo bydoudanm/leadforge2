@@ -37,8 +37,10 @@ import {
 } from "lucide-react";
 import { commonBusinessTypes } from "@/data/globalLocations";
 import { availabilityFilterOptions, filterLeads, type AvailabilityFilter } from "@/lib/leadSearchFilters";
+import { matchesCompanyProfileFilters } from "@/lib/companyLeadFilters";
 import { buildSavedFilterPayload, type SavedFilterPayload, type SavedFilterView } from "@/lib/savedSearchFilters";
 import ThemeToggle from "@/components/ThemeToggle";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { ComponentType, ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
@@ -64,6 +66,8 @@ type Lead = {
   service: string;
   reviews: string;
   accent: string;
+  employeeCount: number;
+  annualRevenue: number;
 };
 
 type User = { id: number; name: string | null; email: string; plan: string };
@@ -173,6 +177,8 @@ const leads: Lead[] = [
     category: "Restaurant",
     opportunity: "Weak Website",
     score: 92,
+    employeeCount: 12,
+    annualRevenue: 1200000,
     email: "napolipizzahouse@gmail.com",
     ownerEmail: "marco.rossi@napolipizzahouse.com",
     founderEmail: "marco.rossi@napolipizzahouse.com",
@@ -195,6 +201,8 @@ const leads: Lead[] = [
     category: "Restaurant",
     opportunity: "Weak Website",
     score: 88,
+    employeeCount: 24,
+    annualRevenue: 2800000,
     email: "sushiworld.la@gmail.com",
     ownerEmail: "owner@sushiworldla.com",
     phone: "(323) 555-0123",
@@ -216,6 +224,8 @@ const leads: Lead[] = [
     category: "Restaurant",
     opportunity: "Weak SEO",
     score: 85,
+    employeeCount: 8,
+    annualRevenue: 750000,
     email: "theburgerspot.la@gmail.com",
     founderEmail: "founder@theburgerspotla.com",
     phone: "(323) 555-0145",
@@ -235,6 +245,8 @@ const leads: Lead[] = [
     category: "Restaurant",
     opportunity: "Weak Social Media",
     score: 80,
+    employeeCount: 18,
+    annualRevenue: 1600000,
     email: "tacofiesta.la@gmail.com",
     ownerEmail: "manager@tacofiestala.com",
     phone: "(323) 555-0177",
@@ -253,6 +265,8 @@ const leads: Lead[] = [
     category: "Restaurant",
     opportunity: "Weak Website",
     score: 72,
+    employeeCount: 6,
+    annualRevenue: 500000,
     email: "pastapalace.la@gmail.com",
     phone: "(323) 555-0188",
     facebookPage: "facebook.com/pastapalacela",
@@ -270,6 +284,8 @@ const leads: Lead[] = [
     category: "Coffee Shop",
     opportunity: "Media Opportunity",
     score: 78,
+    employeeCount: 32,
+    annualRevenue: 4200000,
     email: "hello@harborviewcoffee.com",
     ownerEmail: "owner@harborviewcoffee.com",
     phone: "(619) 555-0124",
@@ -334,6 +350,27 @@ const contactOptions: ReadonlyArray<readonly [string, ComponentType<{ className?
   ["Website", Globe2, false],
 ];
 
+const employeeSizeOptions = [
+  { value: "1-10", label: "1–10 employees", min: 1, max: 10 },
+  { value: "11-50", label: "11–50 employees", min: 11, max: 50 },
+  { value: "51-200", label: "51–200 employees", min: 51, max: 200 },
+  { value: "201+", label: "201+ employees", min: 201, max: Number.POSITIVE_INFINITY },
+] as const;
+
+const annualRevenueOptions = [
+  { value: "under-1m", label: "Under $1M", min: 0, max: 999_999 },
+  { value: "1m-5m", label: "$1M–$5M", min: 1_000_000, max: 4_999_999 },
+  { value: "5m-25m", label: "$5M–$25M", min: 5_000_000, max: 24_999_999 },
+  { value: "25m+", label: "$25M+", min: 25_000_000, max: Number.POSITIVE_INFINITY },
+] as const;
+
+const socialFilterTooltips: Record<string, string> = {
+  "Weak Social Media": "Targets companies with limited activity or a weak presence across social channels.",
+  "Facebook Page": "Finds a public Facebook Page connected to the company.",
+  Instagram: "Finds a public Instagram profile connected to the company.",
+  "LinkedIn Profile": "Finds a company or organization LinkedIn profile.",
+};
+
 function CrownIcon({ className }: { className?: string }) {
   return <span className={className}>♛</span>;
 }
@@ -374,6 +411,8 @@ export default function CompanyLeadSearch() {
   const [businessTypeDropdownOpen, setBusinessTypeDropdownOpen] = useState(false);
   const [selectedOpportunities, setSelectedOpportunities] = useState<string[]>(["Weak Website", "Weak Social Media"]);
   const [selectedContacts, setSelectedContacts] = useState<string[]>(["Business Email", "Owner / Manager Email", "WhatsApp Number", "Google Business Profile", "Website"]);
+  const [selectedEmployeeSize, setSelectedEmployeeSize] = useState("");
+  const [selectedAnnualRevenue, setSelectedAnnualRevenue] = useState("");
   const [selectedLeadId, setSelectedLeadId] = useState(1);
   const [selectedRowIds, setSelectedRowIds] = useState<number[]>([]);
   const [selectedTab, setSelectedTab] = useState("All");
@@ -483,10 +522,16 @@ export default function CompanyLeadSearch() {
     }
   };
 
-  const selectedLead = useMemo(() => leads.find((lead) => lead.id === selectedLeadId) ?? leads[0], [selectedLeadId]);
-  const filteredLeads = useMemo(() => filterLeads(leads, selectedTab, selectedDataFilters), [selectedTab, selectedDataFilters]);
+  const filteredLeads = useMemo(() => {
+    const employeeRange = employeeSizeOptions.find((option) => option.value === selectedEmployeeSize);
+    const revenueRange = annualRevenueOptions.find((option) => option.value === selectedAnnualRevenue);
+    const companyMatches = leads.filter((lead) => matchesCompanyProfileFilters(lead, employeeRange, revenueRange));
+    return filterLeads(companyMatches, selectedTab, selectedDataFilters);
+  }, [selectedAnnualRevenue, selectedDataFilters, selectedEmployeeSize, selectedTab]);
+  const selectedLead = useMemo(() => filteredLeads.find((lead) => lead.id === selectedLeadId) ?? filteredLeads[0] ?? leads[0], [filteredLeads, selectedLeadId]);
   const requestedCount = Number(requestedResultCount);
-  const resultCount = searched && selectedTab === "All" && selectedDataFilters.length === 0 ? requestedCount : filteredLeads.length;
+  const hasCompanyFilters = Boolean(selectedEmployeeSize || selectedAnnualRevenue);
+  const resultCount = searched && selectedTab === "All" && selectedDataFilters.length === 0 && !hasCompanyFilters ? requestedCount : filteredLeads.length;
   const visibleLeads = searched && Number.isInteger(requestedCount) && requestedCount > 0 ? filteredLeads.slice(0, requestedCount) : filteredLeads;
 
   const toggle = (items: string[], value: string, setter: (value: string[]) => void) => {
@@ -505,6 +550,8 @@ export default function CompanyLeadSearch() {
     selectedCity,
     businessType,
     requestedResultCount,
+    selectedEmployeeSize,
+    selectedAnnualRevenue,
   });
 
   const handleSaveFilter = async () => {
@@ -546,6 +593,8 @@ export default function CompanyLeadSearch() {
     setSelectedRegionCode(filters.selectedRegionCode || "");
     setSelectedCity(filters.selectedCity || "");
     setBusinessType(filters.businessType || "");
+    setSelectedEmployeeSize(filters.selectedEmployeeSize || "");
+    setSelectedAnnualRevenue(filters.selectedAnnualRevenue || "");
     setRequestedResultCount(filters.requestedResultCount || "");
     setSearched(Boolean(filters.requestedResultCount));
     setSavedFilterNotice(`Applied filter “${view.name}”.`);
@@ -585,6 +634,8 @@ export default function CompanyLeadSearch() {
     setSelectedCountry("");
     setSelectedRegion("");
     setSelectedCity("");
+    setSelectedEmployeeSize("");
+    setSelectedAnnualRevenue("");
     setRequestedResultCount("");
     setSearchCountError("");
     setSearched(false);
@@ -810,13 +861,40 @@ export default function CompanyLeadSearch() {
             </div>
           </section>
 
+          <section data-company-filters className="rounded-xl border border-slate-800 bg-[#071321]/90 p-4 lg:p-5">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <div>
+                <h2 className="text-sm font-semibold text-white">Company Profile Filters</h2>
+                <p className="text-[10px] text-slate-500 mt-1">Narrow company results by organization size and annual revenue.</p>
+              </div>
+              <Building2 className="w-4 h-4 text-violet-400" />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <label className="block">
+                <span className="block text-[10px] text-slate-400 mb-1.5">Employee count</span>
+                <select aria-label="Company employee count" value={selectedEmployeeSize} onChange={(event) => setSelectedEmployeeSize(event.target.value)} className="w-full rounded-lg border border-slate-700 bg-[#081724] px-3 py-3 text-xs text-slate-200 outline-none focus:border-violet-500">
+                  <option value="">Any employee size</option>
+                  {employeeSizeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </select>
+              </label>
+              <label className="block">
+                <span className="block text-[10px] text-slate-400 mb-1.5">Annual revenue</span>
+                <select aria-label="Company annual revenue" value={selectedAnnualRevenue} onChange={(event) => setSelectedAnnualRevenue(event.target.value)} className="w-full rounded-lg border border-slate-700 bg-[#081724] px-3 py-3 text-xs text-slate-200 outline-none focus:border-violet-500">
+                  <option value="">Any annual revenue</option>
+                  {annualRevenueOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </select>
+              </label>
+            </div>
+          </section>
+
           <section className="rounded-xl border border-slate-800 bg-[#071321]/90 p-4 lg:p-5">
             <SectionTitle number="2" title="What opportunity / need do you want to target?" />
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-2.5">
               {opportunityOptions.map(([title, subtitle, iconName]) => {
                 const active = selectedOpportunities.includes(title);
                 const Icon = iconName === 'Search' ? Search : iconName === 'Activity' ? Activity : iconName === 'Star' ? Star : iconName === 'Target' ? Target : iconName === 'ShieldCheck' ? ShieldCheck : iconName === 'Sparkles' ? Sparkles : iconName === 'Timer' ? Timer : iconName === 'CalendarDays' ? CalendarDays : iconName === 'BarChart3' ? BarChart3 : iconName === 'PanelRight' ? PanelRight : FileText;
-                return <button key={title} onClick={() => toggle(selectedOpportunities, title, setSelectedOpportunities)} className={`min-h-[56px] rounded-lg border px-3 py-2 text-left flex items-center gap-2.5 transition-colors ${active ? "border-violet-500 bg-violet-500/10" : "border-slate-800 bg-slate-900/25 hover:border-slate-700"}`}><Icon className={`w-4 h-4 shrink-0 ${active ? "text-violet-400" : "text-slate-500"}`} /><span className="min-w-0"><span className="block text-[11px] font-medium text-slate-200 truncate">{title}</span><span className="block text-[10px] text-slate-500 truncate">{subtitle}</span></span>{active && <Check className="w-3.5 h-3.5 ml-auto text-violet-300 shrink-0" />}</button>;
+                const card = <button key={title} title={socialFilterTooltips[title]} onClick={() => toggle(selectedOpportunities, title, setSelectedOpportunities)} className={`min-h-[56px] rounded-lg border px-3 py-2 text-left flex items-center gap-2.5 transition-colors ${active ? "border-violet-500 bg-violet-500/10" : "border-slate-800 bg-slate-900/25 hover:border-slate-700"}`}><Icon className={`w-4 h-4 shrink-0 ${active ? "text-violet-400" : "text-slate-500"}`} /><span className="min-w-0"><span className="block text-[11px] font-medium text-slate-200 truncate">{title}</span><span className="block text-[10px] text-slate-500 truncate">{subtitle}</span></span>{active && <Check className="w-3.5 h-3.5 ml-auto text-violet-300 shrink-0" />}</button>;
+                return socialFilterTooltips[title] ? <Tooltip key={title}><TooltipTrigger asChild>{card}</TooltipTrigger><TooltipContent side="top">{socialFilterTooltips[title]}</TooltipContent></Tooltip> : card;
               })}
             </div>
           </section>
@@ -824,7 +902,7 @@ export default function CompanyLeadSearch() {
           <section className="rounded-xl border border-slate-800 bg-[#071321]/90 p-4 lg:p-5">
             <div className="flex items-center justify-between gap-3 mb-3"><SectionTitle number="3" title="What contact & business data do you want to find?" /><button onClick={() => setSelectedContacts(selectedContacts.length === contactOptions.length ? [] : contactOptions.map(([label]) => label))} className="text-[11px] text-slate-300 hover:text-white">{selectedContacts.length === contactOptions.length ? "Clear All" : "Select All"} <span className="inline-grid place-items-center w-4 h-4 ml-1 rounded-full bg-violet-600 text-white">{selectedContacts.length === contactOptions.length ? <Check className="w-3 h-3" /> : ""}</span></button></div>
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-2.5">
-              {contactOptions.map(([label, Icon, pro]) => { const active = selectedContacts.includes(label); return <button key={label} onClick={() => toggle(selectedContacts, label, setSelectedContacts)} className={`min-h-[48px] rounded-lg border px-3 py-2 text-left flex items-center gap-2 ${active ? "border-violet-500 bg-violet-500/10" : "border-slate-800 bg-slate-900/25 hover:border-slate-700"}`}><Icon className={`w-4 h-4 shrink-0 ${active ? "text-violet-300" : "text-slate-500"}`} /><span className="text-[10px] text-slate-200 truncate">{label}</span>{pro && <span className="ml-auto text-[8px] px-1.5 py-0.5 rounded bg-red-900/80 text-red-200">PRO</span>}{active && <Check className="w-3.5 h-3.5 text-violet-300 shrink-0" />}</button>; })}
+              {contactOptions.map(([label, Icon, pro]) => { const active = selectedContacts.includes(label); const card = <button key={label} title={socialFilterTooltips[label]} onClick={() => toggle(selectedContacts, label, setSelectedContacts)} className={`min-h-[48px] rounded-lg border px-3 py-2 text-left flex items-center gap-2 ${active ? "border-violet-500 bg-violet-500/10" : "border-slate-800 bg-slate-900/25 hover:border-slate-700"}`}><Icon className={`w-4 h-4 shrink-0 ${active ? "text-violet-300" : "text-slate-500"}`} /><span className="text-[10px] text-slate-200 truncate">{label}</span>{pro && <span className="ml-auto text-[8px] px-1.5 py-0.5 rounded bg-red-900/80 text-red-200">PRO</span>}{active && <Check className="w-3.5 h-3.5 text-violet-300 shrink-0" />}</button>; return socialFilterTooltips[label] ? <Tooltip key={label}><TooltipTrigger asChild>{card}</TooltipTrigger><TooltipContent side="top">{socialFilterTooltips[label]}</TooltipContent></Tooltip> : card; })}
             </div>
             <div className="mt-3 rounded-lg border border-slate-800 bg-[#06101c] p-4 flex flex-col lg:flex-row lg:items-center gap-4"><div className="w-10 h-10 rounded-xl bg-violet-500/10 grid place-items-center"><Globe2 className="w-5 h-5 text-violet-400" /></div><div className="flex-1"><div className="flex items-center gap-2"><h3 className="text-sm font-medium text-white">Website</h3><span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-300">Included</span></div><div className="grid grid-cols-2 md:grid-cols-3 gap-x-5 gap-y-1 mt-2 text-[10px] text-slate-400"><span className="text-emerald-400">✓ Website URL</span><span className="text-emerald-400">✓ Domain age</span><span className="text-emerald-400">✓ Mobile friendliness</span><span className="text-emerald-400">✓ SSL & security info</span><span className="text-emerald-400">✓ Last updated</span><span className="text-emerald-400">✓ Broken links (if any)</span><span className="text-emerald-400">✓ CMS / Technology used</span><span className="text-emerald-400">✓ Page speed score</span><span className="text-emerald-400">✓ Website quality score</span></div></div><div className="text-right text-[10px] text-slate-500">Estimated Credits / Lead: <span className="text-white">+1</span> <span className="inline-grid place-items-center w-4 h-4 rounded-full bg-violet-600 text-white">✦</span></div></div>
             <div className="flex flex-wrap items-center justify-between gap-3 mt-4"><div className="flex flex-wrap items-center gap-2"><button onClick={handleSearch} className="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 text-xs font-semibold text-white shadow-lg shadow-violet-950/30 hover:from-violet-500 hover:to-indigo-500">{searching ? <Activity className="w-4 h-4 animate-pulse" /> : <Search className="w-4 h-4" />}{searching ? "Searching…" : "Search Leads"}</button><label className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-950/40 px-3 py-2 text-xs text-slate-300"><span className="whitespace-nowrap">Leads to find</span><input aria-label="Number of leads to search" type="number" min="1" step="1" inputMode="numeric" value={requestedResultCount} onChange={(event) => { setRequestedResultCount(event.target.value); setSearchCountError(""); }} placeholder="e.g. 170" className="w-20 bg-transparent text-right text-white outline-none placeholder:text-slate-600" /></label>{searchCountError && <span className="text-[10px] text-rose-300">{searchCountError}</span>}</div><button onClick={clearAll} className="px-4 py-2 rounded-lg border border-slate-700 text-xs text-slate-300 hover:bg-slate-800">Clear All</button></div></section>

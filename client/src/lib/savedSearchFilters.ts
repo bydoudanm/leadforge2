@@ -14,6 +14,8 @@ export type SavedFilterPayload = {
   selectedCity: string;
   businessType: string;
   requestedResultCount: string;
+  selectedEmployeeSize?: string;
+  selectedAnnualRevenue?: string;
 };
 
 export type SavedFilterView = {
