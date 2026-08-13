@@ -120,3 +120,7 @@
 - [x] Complete parent-company AI outreach UI with loading and error states, and verify in browser
 - [x] Add Vitest coverage for entity-type filtering and the `/api/ai/generate-outreach` endpoint
 - [x] Save a fresh checkpoint after all expansion requirements are verified
+
+- [x] Relocate "Use for Outreach" button into the Results toolbar next to Export and Columns
+- [x] Clean up redundant Saved Filters heading and refine the Saved Filters input container
+- [x] Verify both Lead Search and Company Lead Search routes and run test suite
