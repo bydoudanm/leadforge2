@@ -709,6 +709,10 @@ export default function CompanyLeadSearch() {
         </aside>
 
         <main className="flex-1 min-w-0 p-3 lg:p-5 space-y-3">
+          <div className="px-1 py-1">
+            <h1 className="text-xl font-bold text-white tracking-tight">Company Lead Search</h1>
+            <p className="text-xs text-slate-400 mt-0.5">Find companies that match your target market and identify opportunities you can offer them.</p>
+          </div>
           <section className="rounded-xl border border-slate-800 bg-[#071321]/90 p-4 lg:p-5">
             <SectionTitle number="1" title="Where are you looking for businesses?" />
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">

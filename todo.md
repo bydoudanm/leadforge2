@@ -89,3 +89,7 @@
 - [x] Record console theme state and surface color for both Dark and White modes on /outreach
 - [x] Capture distinct Dark and White state readings via console on /outreach
 - [x] Capture explicit console readings for both White and Dark modes on /outreach
+
+- [x] Audit Company Lead Search against PROMPT 1 requirements (added professional header block, verified `searchMode = "company"`, sidebar position, and shared search foundation)
+- [x] Document PROMPT 1 compliance checklist against current implementation
+- [x] Run test suite, typecheck, and build to verify audit changes
