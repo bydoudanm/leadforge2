@@ -39,6 +39,7 @@ import { filterBusinessTypeResults, getBusinessTypeSuggestionSummary, getBusines
 import { availabilityFilterOptions, filterLeads, type AvailabilityFilter } from "@/lib/leadSearchFilters";
 import { buildSavedFilterPayload, type SavedFilterPayload, type SavedFilterView } from "@/lib/savedSearchFilters";
 import ThemeToggle from "@/components/ThemeToggle";
+import AcquisitionSidebar from "@/components/AcquisitionSidebar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { ComponentType, ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -376,6 +377,8 @@ export default function LeadSearch() {
   const [searching, setSearching] = useState(false);
   const [searched, setSearched] = useState(false);
   const [outreachLanguage, setOutreachLanguage] = useState("English");
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [generatedAiEmail, setGeneratedAiEmail] = useState("");
   const [requestedResultCount, setRequestedResultCount] = useState("");
   const [savedFilters, setSavedFilters] = useState<SavedFilterView[]>([]);
   const [savedFilterName, setSavedFilterName] = useState("");
@@ -620,6 +623,35 @@ export default function LeadSearch() {
     setActionNotice(`${rows.length} filtered result${rows.length === 1 ? "" : "s"} exported.`);
   };
 
+  const handleGenerateAiEmail = async () => {
+    setAiGenerating(true);
+    setGeneratedAiEmail("");
+    try {
+      const response = await fetch("/api/ai/generate-outreach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          searchMode: "individual",
+          businessName: selectedLead.company,
+          recipientName: selectedLead.ownerEmail ? "the owner or manager" : "the business decision maker",
+          recipientRole: selectedLead.ownerEmail ? "Owner or Manager" : "Business Decision Maker",
+          opportunity: selectedLead.opportunity,
+          category: selectedLead.category,
+          location: selectedLead.location,
+          language: outreachLanguage,
+        }),
+      });
+      if (!response.ok) throw new Error("Unable to generate individual outreach");
+      const data = await response.json() as { generatedEmail?: string };
+      setGeneratedAiEmail(data.generatedEmail || "No message was generated.");
+    } catch {
+      setActionNotice("Unable to generate individual outreach right now.");
+    } finally {
+      setAiGenerating(false);
+    }
+  };
+
   const handleUseForOutreach = async () => {
     const rows = visibleLeads.filter((lead) => selectedRowIds.length === 0 || selectedRowIds.includes(lead.id));
     if (rows.length === 0) {
@@ -698,19 +730,7 @@ export default function LeadSearch() {
       </header>
 
       <div className="flex min-h-[calc(100vh-4rem)]">
-        <aside className={`${sidebarOpen ? "w-56" : "w-16"} hidden md:flex shrink-0 bg-[#06101c] border-r border-slate-800/80 flex-col transition-all`}>
-          <div className="p-3 border-b border-slate-800/80"><button onClick={() => setSidebarOpen((open) => !open)} className="w-full flex items-center justify-center py-2 rounded-lg hover:bg-slate-800/70 text-slate-400"><Menu className="w-4 h-4" />{sidebarOpen && <span className="ml-2 text-xs">Collapse</span>}</button></div>
-          <nav className="flex-1 p-3 space-y-1">
-            <SideItem icon={Search} label="Lead Search" active expanded={sidebarOpen} onClick={() => setLocation('/lead-search')} />
-            <SideItem icon={Building2} label="Company Lead Search" expanded={sidebarOpen} onClick={() => setLocation('/company-lead-search')} />
-            <SideItem icon={Users} label="Leads" expanded={sidebarOpen} onClick={() => setLocation('/dashboard')} />
-            <SideItem icon={Target} label="Opportunities" expanded={sidebarOpen} />
-            <SideItem icon={Mail} label="Outreach" expanded={sidebarOpen} />
-            <SideItem icon={BarChart3} label="Reports" expanded={sidebarOpen} />
-            <SideItem icon={Settings} label="Settings" expanded={sidebarOpen} onClick={() => setLocation('/settings')} />
-          </nav>
-          <div className="p-3 border-t border-slate-800/80"><button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs text-slate-500 hover:bg-slate-800 hover:text-white"><ArrowLeft className="w-4 h-4 rotate-180" />{sidebarOpen && "Logout"}</button></div>
-        </aside>
+        <AcquisitionSidebar activeMode="individual" expanded={sidebarOpen} onToggle={() => setSidebarOpen((open) => !open)} onNavigate={setLocation} onLogout={handleLogout} />
 
         <main className="flex-1 min-w-0 p-3 lg:p-5 space-y-3">
           <section className="rounded-xl border border-slate-800 bg-[#071321]/90 p-4 lg:p-5">
@@ -848,7 +868,7 @@ export default function LeadSearch() {
             <div className="rounded-xl border border-slate-800 bg-[#071321]/90 p-4 relative"><button className="absolute right-4 top-4 p-1 rounded-full border border-slate-700 text-slate-400 hover:text-white"><X className="w-4 h-4" /></button><h3 className="text-sm font-medium text-white">Recommended Service / Offer</h3><div className="mt-5 flex items-center gap-2 text-violet-300"><Sparkles className="w-5 h-5" />{selectedLead.service}</div><p className="text-[11px] text-slate-400 leading-relaxed mt-4">Perfect opportunity to offer a professional service that builds trust and drives more customers.</p></div>
           </section>
 
-          <section className="rounded-xl border border-slate-800 bg-[#071321]/90 overflow-hidden"><div className="border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 px-4"><div className="flex items-center gap-5 overflow-x-auto">{["Business Info", "Contact & Business Data", "Opportunity Insights", "Notes", "Outreach History"].map((tab, index) => <button key={tab} className={`py-4 text-[10px] whitespace-nowrap border-b-2 ${index === 0 ? "text-violet-300 border-violet-500" : "text-slate-500 border-transparent"}`}>{tab}</button>)}</div><div className="flex items-center gap-2 py-2"><span className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-300 grid place-items-center text-[10px]">AI</span><span className="text-xs text-slate-300">AI Outreach Preview</span><select value={outreachLanguage} onChange={(event) => setOutreachLanguage(event.target.value)} className="ml-3 bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-[10px] text-slate-300"><option>English</option><option>Spanish</option><option>French</option></select></div></div><div className="grid grid-cols-1 lg:grid-cols-3"><div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-5 p-5 text-[11px] border-r border-slate-800"><InfoItem icon={Globe2} label="Website" value={`https://${selectedLead.website}`} /><InfoItem icon={MapPin} label="Address" value={`123 Main St, ${selectedCity || "Los Angeles"}, ${selectedRegion || "CA"}, ${selectedCountry || "USA"}`} /><InfoItem icon={CalendarDays} label="Founded" value="2015" /><InfoItem icon={Mail} label="Business Email" value={selectedLead.email} /><InfoItem icon={MapPin} label="Google Business Profile" value="View on Google" /><InfoItem icon={Users} label="Employees" value="11-50" /><InfoItem icon={Phone} label="Phone Number" value={selectedLead.phone} /><InfoItem icon={Building2} label="Category" value={selectedLead.category} /><InfoItem icon={UserRound} label="Owner" value="Marco Rossi" /></div><div className="p-5 bg-[#06101c]"><div className="text-[11px] text-slate-300 leading-relaxed space-y-4"><p>Hi {selectedLead.company},</p><p>I noticed your restaurant in {selectedCity || "Los Angeles"} has a lot of potential, but your website could better showcase your amazing food and attract more customers.</p><p>I’d love to help you improve your online presence and grow your business.</p><p>Would you be open to a quick chat?</p></div><button className="mt-5 w-full py-2.5 rounded-lg border border-emerald-500/50 text-emerald-300 text-xs hover:bg-emerald-500/10">Generate {outreachLanguage} version</button></div></div>          </section>
+          <section className="rounded-xl border border-slate-800 bg-[#071321]/90 overflow-hidden"><div className="border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 px-4"><div className="flex items-center gap-5 overflow-x-auto">{["Business Info", "Contact & Business Data", "Opportunity Insights", "Notes", "Outreach History"].map((tab, index) => <button key={tab} className={`py-4 text-[10px] whitespace-nowrap border-b-2 ${index === 0 ? "text-violet-300 border-violet-500" : "text-slate-500 border-transparent"}`}>{tab}</button>)}</div><div className="flex items-center gap-2 py-2"><span className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-300 grid place-items-center text-[10px]">AI</span><span className="text-xs text-slate-300">Individual Outreach · Owner / Manager</span><select value={outreachLanguage} onChange={(event) => setOutreachLanguage(event.target.value)} className="ml-3 bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-[10px] text-slate-300"><option>English</option><option>Spanish</option><option>French</option></select></div></div><div className="grid grid-cols-1 lg:grid-cols-3"><div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-5 p-5 text-[11px] border-r border-slate-800"><InfoItem icon={Globe2} label="Website" value={`https://${selectedLead.website}`} /><InfoItem icon={MapPin} label="Address" value={`123 Main St, ${selectedCity || "Los Angeles"}, ${selectedRegion || "CA"}, ${selectedCountry || "USA"}`} /><InfoItem icon={CalendarDays} label="Founded" value="2015" /><InfoItem icon={Mail} label="Business Email" value={selectedLead.email} /><InfoItem icon={MapPin} label="Google Business Profile" value="View on Google" /><InfoItem icon={Users} label="Employees" value="11-50" /><InfoItem icon={Phone} label="Phone Number" value={selectedLead.phone} /><InfoItem icon={Building2} label="Category" value={selectedLead.category} /><InfoItem icon={UserRound} label="Owner / Manager" value={selectedLead.ownerEmail || "Contact not found"} /></div><div className="p-5 bg-[#06101c]"><div className="text-[11px] text-slate-300 leading-relaxed space-y-4 whitespace-pre-wrap">{generatedAiEmail || `Hi ${selectedLead.ownerEmail ? "the owner or manager" : selectedLead.company},\n\nI noticed your business has an opportunity to improve ${selectedLead.opportunity.toLowerCase()} and attract more customers.\n\nI’d love to share a practical way to help.\n\nWould you be open to a quick chat?`}</div><button onClick={() => void handleGenerateAiEmail()} disabled={aiGenerating} className="mt-5 w-full py-2.5 rounded-lg border border-emerald-500/50 text-emerald-300 text-xs hover:bg-emerald-500/10 disabled:opacity-60">{aiGenerating ? "Generating…" : `Generate ${outreachLanguage} individual email`}</button></div></div>          </section>
           </> : <section className="rounded-xl border border-slate-800 bg-[#071321]/90 p-6 text-center text-sm text-slate-400">No businesses match <span className="font-medium text-white">{businessType}</span> with the current opportunity and contact filters.</section>}
         </main>
       </div>

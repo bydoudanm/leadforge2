@@ -3,6 +3,7 @@ import type { ComponentType } from "react";
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import ThemeToggle from "@/components/ThemeToggle";
+import AcquisitionSidebar from "@/components/AcquisitionSidebar";
 
 type User = { id: number; name: string | null; email: string; plan: string };
 type OutreachItem = {
@@ -44,6 +45,7 @@ export default function Outreach() {
   const [, setLocation] = useLocation();
   const [user, setUser] = useState<User | null>(null);
   const [items, setItems] = useState<OutreachItem[]>([]);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -105,72 +107,75 @@ export default function Outreach() {
         </div>
       </header>
 
-      <div className="flex">
-        <aside className="w-64 min-h-[calc(100vh-4rem)] border-r border-slate-800/90 bg-[#050d19]/80 p-4 hidden md:block">
-          <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Acquisition Engine</div>
-          <div className="space-y-1">
-            <button onClick={() => setLocation("/lead-search")} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-slate-400 hover:bg-slate-900/60 hover:text-white"><Search className="w-4 h-4" />Lead Search</button>
-            <button onClick={() => setLocation("/company-lead-search")} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-slate-400 hover:bg-slate-900/60 hover:text-white"><Building2 className="w-4 h-4" />Company Lead Search</button>
-            <button onClick={() => setLocation("/outreach")} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-violet-300 bg-violet-500/10 border border-violet-500/20"><Mail className="w-4 h-4" />Outreach List</button>
-            <button onClick={() => setLocation("/dashboard")} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-slate-400 hover:bg-slate-900/60 hover:text-white"><BarChart3 className="w-4 h-4" />Command Center</button>
-            <button onClick={() => setLocation("/settings")} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-slate-400 hover:bg-slate-900/60 hover:text-white"><ShieldCheck className="w-4 h-4" />Settings</button>
-          </div>
-        </aside>
+      <div className="flex min-h-[calc(100vh-4rem)]">
+        <AcquisitionSidebar activeMode="none" expanded={sidebarOpen} onToggle={() => setSidebarOpen((open) => !open)} onNavigate={setLocation} onLogout={async () => { await api<{ success: boolean }>("/api/auth/logout", { method: "POST" }); setLocation("/"); }} />
 
         <main className="flex-1 p-4 lg:p-8 space-y-6 max-w-7xl mx-auto">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl font-semibold text-white tracking-tight">Outreach Campaign Queue</h1>
-              <p className="text-xs text-slate-400 mt-1">Leads sent from Lead Search and Company Lead Search ready for AI email generation and multi-channel delivery.</p>
+              <p className="text-xs text-slate-400 mt-1">Individual outreach targets and Company outreach targets remain separated for the correct recipient and message strategy.</p>
             </div>
             <div className="flex items-center gap-3">
-              <button onClick={() => setLocation("/lead-search")} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 text-xs font-semibold text-white shadow-lg shadow-violet-950/30 hover:from-violet-500 hover:to-indigo-500"><Search className="w-4 h-4" />Find More Leads</button>
+              <button onClick={() => setLocation("/lead-search")} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 text-xs font-semibold text-white shadow-lg shadow-violet-950/30 hover:from-violet-500 hover:to-indigo-500"><Search className="w-4 h-4" />Find Individual Leads</button>
+              <button onClick={() => setLocation("/company-lead-search")} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-violet-500/40 text-xs font-semibold text-violet-200 hover:bg-violet-500/10"><Building2 className="w-4 h-4" />Find Companies</button>
             </div>
           </div>
 
           <div className="rounded-xl border border-slate-800 bg-[#071321]/90 overflow-hidden">
-            <div className="p-4 border-b border-slate-800 flex items-center justify-between"><div className="text-xs font-medium text-white">Queued Leads ({items.length})</div><div className="text-[10px] text-slate-400">Campaign Mode: AI Automated Sequence</div></div>
-            {items.length === 0 ? (
-              <div className="p-12 text-center text-slate-400 text-xs">No leads in the outreach queue yet. Use <span className="text-violet-300 font-medium">Lead Search</span> or <span className="text-violet-300 font-medium">Company Lead Search</span> to find and send targeted prospects here.</div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[900px] text-left">
-                  <thead className="bg-[#06101c] text-[10px] text-slate-500">
-                    <tr>
-                      <th className="px-4 py-3">Parent Company</th>
-                      <th className="px-2 py-3">Target</th>
-                      <th className="px-2 py-3">Category</th>
-                      <th className="px-2 py-3">Opportunity</th>
-                      <th className="px-2 py-3">Score</th>
-                      <th className="px-2 py-3">Branches</th>
-                      <th className="px-2 py-3">Parent Contact</th>
-                      <th className="px-2 py-3">Phone</th>
-                      <th className="px-2 py-3">Location</th>
-                      <th className="px-2 py-3">Added</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/80">
-                    {items.map((item) => (
-                      <tr key={item.id} className="text-[10px] hover:bg-slate-900/70">
-                        <td className="px-4 py-3 font-medium text-white"><div>{item.parentCompanyName || item.companyName}</div>{item.parentCompanyName && <div className="text-[9px] text-slate-500">Source branch: {item.companyName}</div>}</td>
-                        <td className="px-2 py-3 text-violet-300 capitalize">{item.searchMode === "company" ? "Parent Company Search" : "Individual Search"}</td>
-                        <td className="px-2 py-3 text-slate-400">{item.category || "—"}</td>
-                        <td className="px-2 py-3"><span className="px-2 py-1 rounded bg-violet-500/20 text-violet-200">{item.opportunity || "Target"}</span></td>
-                        <td className="px-2 py-3 text-emerald-400 font-semibold">{item.score || 0}</td>
-                        <td className="px-2 py-3 text-slate-400">{item.searchMode === "company" ? `${item.branchCount || 1}` : "—"}</td>
-                        <td className="px-2 py-3 text-slate-400">{item.parentCompanyEmail || item.parentFounderEmail || item.email || "—"}</td>
-                        <td className="px-2 py-3 text-slate-400">{item.phone || "—"}</td>
-                        <td className="px-2 py-3 text-slate-400">{item.location || "—"}</td>
-                        <td className="px-2 py-3 text-slate-500">{new Date(item.createdAt).toLocaleDateString()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between"><div className="text-xs font-medium text-white">Queued Targets ({items.length})</div><div className="text-[10px] text-slate-400">Campaign Mode: AI Automated Sequence</div></div>
+            {items.length === 0 ? <div className="p-12 text-center text-slate-400 text-xs">No outreach targets yet. Use <span className="text-violet-300 font-medium">Lead Search · Individual</span> or <span className="text-violet-300 font-medium">Company Lead Search · Company</span> to add targeted prospects.</div> : <div className="space-y-4 p-4"><OutreachModeTable mode="company" items={items.filter((item) => item.searchMode === "company")} /><OutreachModeTable mode="individual" items={items.filter((item) => item.searchMode !== "company")} /></div>}
           </div>
         </main>
       </div>
     </div>
+  );
+}
+
+
+type OutreachTableMode = "individual" | "company";
+
+function OutreachModeTable({ mode, items }: { mode: OutreachTableMode; items: OutreachItem[] }) {
+  if (items.length === 0) return null;
+  const companyMode = mode === "company";
+  return (
+    <section className="rounded-lg border border-slate-800/90 overflow-hidden">
+      <div className="px-3 py-2.5 border-b border-slate-800 bg-[#06101c] flex items-center justify-between">
+        <div className="text-xs font-medium text-white">{companyMode ? "Company Outreach · Parent Targets" : "Individual Outreach · Owner / Manager Targets"} ({items.length})</div>
+        <div className="text-[10px] text-slate-500">{companyMode ? "CEO / Founder or company contact" : "Owner / Manager or business contact"}</div>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[900px] text-left">
+          <thead className="bg-[#06101c] text-[10px] text-slate-500">
+            <tr>
+              <th className="px-4 py-3">{companyMode ? "Parent Company" : "Business"}</th>
+              <th className="px-2 py-3">{companyMode ? "Branch Coverage" : "Recipient"}</th>
+              <th className="px-2 py-3">Category</th>
+              <th className="px-2 py-3">Opportunity</th>
+              <th className="px-2 py-3">Score</th>
+              <th className="px-2 py-3">{companyMode ? "Company Contact" : "Business Email"}</th>
+              <th className="px-2 py-3">Phone</th>
+              <th className="px-2 py-3">Location</th>
+              <th className="px-2 py-3">Added</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-800/80">
+            {items.map((item) => (
+              <tr key={item.id} className="text-[10px] hover:bg-slate-900/70">
+                <td className="px-4 py-3 font-medium text-white"><div>{companyMode ? item.parentCompanyName || item.companyName : item.companyName}</div>{companyMode && item.parentCompanyName && <div className="text-[9px] text-slate-500">Source branch: {item.companyName}</div>}</td>
+                <td className="px-2 py-3 text-violet-300">{companyMode ? `${item.branchCount || 1} managed ${(item.branchCount || 1) === 1 ? "location" : "locations"}` : "Owner / Manager"}</td>
+                <td className="px-2 py-3 text-slate-400">{item.category || "—"}</td>
+                <td className="px-2 py-3"><span className="px-2 py-1 rounded bg-violet-500/20 text-violet-200">{item.opportunity || "Target"}</span></td>
+                <td className="px-2 py-3 text-emerald-400 font-semibold">{item.score || 0}</td>
+                <td className="px-2 py-3 text-slate-400">{companyMode ? item.parentCompanyEmail || item.parentFounderEmail || item.email || "—" : item.email || "—"}</td>
+                <td className="px-2 py-3 text-slate-400">{item.phone || "—"}</td>
+                <td className="px-2 py-3 text-slate-400">{item.location || "—"}</td>
+                <td className="px-2 py-3 text-slate-500">{new Date(item.createdAt).toLocaleDateString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
