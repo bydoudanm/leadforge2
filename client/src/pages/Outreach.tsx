@@ -8,6 +8,11 @@ type User = { id: number; name: string | null; email: string; plan: string };
 type OutreachItem = {
   id: number;
   companyName: string;
+  parentCompanyName: string | null;
+  parentCompanyEmail: string | null;
+  parentFounderEmail: string | null;
+  branchCount: number | null;
+  branchLocationsJson: string | null;
   category: string | null;
   opportunity: string | null;
   score: number | null;
@@ -132,12 +137,13 @@ export default function Outreach() {
                 <table className="w-full min-w-[900px] text-left">
                   <thead className="bg-[#06101c] text-[10px] text-slate-500">
                     <tr>
-                      <th className="px-4 py-3">Company Name</th>
-                      <th className="px-2 py-3">Source Type</th>
+                      <th className="px-4 py-3">Parent Company</th>
+                      <th className="px-2 py-3">Target</th>
                       <th className="px-2 py-3">Category</th>
                       <th className="px-2 py-3">Opportunity</th>
                       <th className="px-2 py-3">Score</th>
-                      <th className="px-2 py-3">Email</th>
+                      <th className="px-2 py-3">Branches</th>
+                      <th className="px-2 py-3">Parent Contact</th>
                       <th className="px-2 py-3">Phone</th>
                       <th className="px-2 py-3">Location</th>
                       <th className="px-2 py-3">Added</th>
@@ -146,12 +152,13 @@ export default function Outreach() {
                   <tbody className="divide-y divide-slate-800/80">
                     {items.map((item) => (
                       <tr key={item.id} className="text-[10px] hover:bg-slate-900/70">
-                        <td className="px-4 py-3 font-medium text-white">{item.companyName}</td>
-                        <td className="px-2 py-3 text-violet-300 capitalize">{item.searchMode} Search</td>
+                        <td className="px-4 py-3 font-medium text-white"><div>{item.parentCompanyName || item.companyName}</div>{item.parentCompanyName && <div className="text-[9px] text-slate-500">Source branch: {item.companyName}</div>}</td>
+                        <td className="px-2 py-3 text-violet-300 capitalize">{item.searchMode === "company" ? "Parent Company Search" : "Individual Search"}</td>
                         <td className="px-2 py-3 text-slate-400">{item.category || "—"}</td>
                         <td className="px-2 py-3"><span className="px-2 py-1 rounded bg-violet-500/20 text-violet-200">{item.opportunity || "Target"}</span></td>
                         <td className="px-2 py-3 text-emerald-400 font-semibold">{item.score || 0}</td>
-                        <td className="px-2 py-3 text-slate-400">{item.email || "—"}</td>
+                        <td className="px-2 py-3 text-slate-400">{item.searchMode === "company" ? `${item.branchCount || 1}` : "—"}</td>
+                        <td className="px-2 py-3 text-slate-400">{item.parentCompanyEmail || item.parentFounderEmail || item.email || "—"}</td>
                         <td className="px-2 py-3 text-slate-400">{item.phone || "—"}</td>
                         <td className="px-2 py-3 text-slate-400">{item.location || "—"}</td>
                         <td className="px-2 py-3 text-slate-500">{new Date(item.createdAt).toLocaleDateString()}</td>

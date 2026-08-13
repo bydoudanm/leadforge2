@@ -118,6 +118,11 @@ export async function createApp() {
     const parsed = z.object({
       leads: z.array(z.object({
         companyName: z.string().min(1),
+        parentCompanyName: z.string().optional(),
+        parentCompanyEmail: z.string().optional(),
+        parentFounderEmail: z.string().optional(),
+        branchCount: z.number().int().positive().optional(),
+        branchLocations: z.array(z.string()).optional(),
         category: z.string().optional(),
         opportunity: z.string().optional(),
         score: z.number().default(0),
@@ -138,6 +143,11 @@ export async function createApp() {
       const values = parsed.data.leads.map((lead) => ({
         userId: request.user!.id,
         companyName: lead.companyName,
+        parentCompanyName: lead.parentCompanyName ?? null,
+        parentCompanyEmail: lead.parentCompanyEmail ?? null,
+        parentFounderEmail: lead.parentFounderEmail ?? null,
+        branchCount: lead.branchCount ?? 1,
+        branchLocationsJson: lead.branchLocations ? JSON.stringify(lead.branchLocations) : null,
         category: lead.category ?? null,
         opportunity: lead.opportunity ?? null,
         score: lead.score ?? 0,

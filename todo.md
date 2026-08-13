@@ -101,4 +101,11 @@
 - [x] Browser-verify annual-revenue filtering and its combined behavior
 - [x] Save a new checkpoint after the tooltip and company-filter fixes
 - [x] Verify annual revenue combined with an opportunity tab and a contact-data filter in Company Lead Search
-- [ ] Save a fresh checkpoint after combined-filter verification
+- [x] Save a fresh checkpoint after combined-filter verification
+
+- [x] Add parent company metadata, branch rollups, and headquarters contact properties to Company Lead Search data model
+- [x] Update Company Lead Search detail view to display parent company hierarchy and managed branches
+- [x] Add Vitest tests for company entity rollup and branch linking
+- [x] Save checkpoint and verify parent-company outreach flow
+- [x] Send a Company Lead Search parent-company result to Outreach in the browser and verify parent company, parent contact, and branch count display correctly
+- [x] Save a fresh checkpoint after the parent-company outreach flow is verified end to end

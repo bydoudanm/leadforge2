@@ -38,6 +38,7 @@ import {
 import { commonBusinessTypes } from "@/data/globalLocations";
 import { availabilityFilterOptions, filterLeads, type AvailabilityFilter } from "@/lib/leadSearchFilters";
 import { matchesCompanyProfileFilters } from "@/lib/companyLeadFilters";
+import { buildParentCompanyOutreachRows, getCompanyHierarchy, rollUpCompanyResults } from "@/lib/companyHierarchy";
 import { buildSavedFilterPayload, type SavedFilterPayload, type SavedFilterView } from "@/lib/savedSearchFilters";
 import ThemeToggle from "@/components/ThemeToggle";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -53,13 +54,16 @@ type Lead = {
   opportunity: string;
   score: number;
   email: string;
+  companyEmail?: string;
   ownerEmail?: string;
   founderEmail?: string;
+  parentFounderEmail?: string;
   phone: string;
   whatsapp?: string;
   facebookPage?: string;
   instagram?: string;
   linkedinProfile?: string;
+  parentLinkedinProfile?: string;
   googleProfile?: string;
   website: string;
   reason: string;
@@ -68,6 +72,7 @@ type Lead = {
   accent: string;
   employeeCount: number;
   annualRevenue: number;
+  parentCompanyId: string;
 };
 
 type User = { id: number; name: string | null; email: string; plan: string };
@@ -179,6 +184,7 @@ const leads: Lead[] = [
     score: 92,
     employeeCount: 12,
     annualRevenue: 1200000,
+    parentCompanyId: "pacific-table-hospitality",
     email: "napolipizzahouse@gmail.com",
     ownerEmail: "marco.rossi@napolipizzahouse.com",
     founderEmail: "marco.rossi@napolipizzahouse.com",
@@ -203,6 +209,7 @@ const leads: Lead[] = [
     score: 88,
     employeeCount: 24,
     annualRevenue: 2800000,
+    parentCompanyId: "pacific-table-hospitality",
     email: "sushiworld.la@gmail.com",
     ownerEmail: "owner@sushiworldla.com",
     phone: "(323) 555-0123",
@@ -226,6 +233,7 @@ const leads: Lead[] = [
     score: 85,
     employeeCount: 8,
     annualRevenue: 750000,
+    parentCompanyId: "burger-spot-group",
     email: "theburgerspot.la@gmail.com",
     founderEmail: "founder@theburgerspotla.com",
     phone: "(323) 555-0145",
@@ -247,6 +255,7 @@ const leads: Lead[] = [
     score: 80,
     employeeCount: 18,
     annualRevenue: 1600000,
+    parentCompanyId: "pacific-table-hospitality",
     email: "tacofiesta.la@gmail.com",
     ownerEmail: "manager@tacofiestala.com",
     phone: "(323) 555-0177",
@@ -267,6 +276,7 @@ const leads: Lead[] = [
     score: 72,
     employeeCount: 6,
     annualRevenue: 500000,
+    parentCompanyId: "pacific-table-hospitality",
     email: "pastapalace.la@gmail.com",
     phone: "(323) 555-0188",
     facebookPage: "facebook.com/pastapalacela",
@@ -286,6 +296,7 @@ const leads: Lead[] = [
     score: 78,
     employeeCount: 32,
     annualRevenue: 4200000,
+    parentCompanyId: "harborview-coffee-group",
     email: "hello@harborviewcoffee.com",
     ownerEmail: "owner@harborviewcoffee.com",
     phone: "(619) 555-0124",
@@ -522,13 +533,23 @@ export default function CompanyLeadSearch() {
     }
   };
 
+  const companyLeads = useMemo(() => leads.map((lead) => {
+    const hierarchy = getCompanyHierarchy(lead.parentCompanyId);
+    return {
+      ...lead,
+      companyEmail: hierarchy.parentCompanyEmail,
+      parentFounderEmail: hierarchy.parentFounderEmail,
+      parentLinkedinProfile: hierarchy.parentLinkedinProfile,
+    };
+  }), []);
   const filteredLeads = useMemo(() => {
     const employeeRange = employeeSizeOptions.find((option) => option.value === selectedEmployeeSize);
     const revenueRange = annualRevenueOptions.find((option) => option.value === selectedAnnualRevenue);
-    const companyMatches = leads.filter((lead) => matchesCompanyProfileFilters(lead, employeeRange, revenueRange));
-    return filterLeads(companyMatches, selectedTab, selectedDataFilters);
-  }, [selectedAnnualRevenue, selectedDataFilters, selectedEmployeeSize, selectedTab]);
-  const selectedLead = useMemo(() => filteredLeads.find((lead) => lead.id === selectedLeadId) ?? filteredLeads[0] ?? leads[0], [filteredLeads, selectedLeadId]);
+    const companyMatches = companyLeads.filter((lead) => matchesCompanyProfileFilters(lead, employeeRange, revenueRange));
+    return rollUpCompanyResults(filterLeads(companyMatches, selectedTab, selectedDataFilters));
+  }, [companyLeads, selectedAnnualRevenue, selectedDataFilters, selectedEmployeeSize, selectedTab]);
+  const selectedLead = useMemo(() => filteredLeads.find((lead) => lead.id === selectedLeadId) ?? filteredLeads[0] ?? companyLeads[0], [companyLeads, filteredLeads, selectedLeadId]);
+  const selectedCompany = useMemo(() => getCompanyHierarchy(selectedLead.parentCompanyId), [selectedLead.parentCompanyId]);
   const requestedCount = Number(requestedResultCount);
   const hasCompanyFilters = Boolean(selectedEmployeeSize || selectedAnnualRevenue);
   const resultCount = searched && selectedTab === "All" && selectedDataFilters.length === 0 && !hasCompanyFilters ? requestedCount : filteredLeads.length;
@@ -552,6 +573,9 @@ export default function CompanyLeadSearch() {
     requestedResultCount,
     selectedEmployeeSize,
     selectedAnnualRevenue,
+    companyEntityTarget: "parent-company",
+    rollUpBranches: true,
+    companyContactTarget: "parent-company",
   });
 
   const handleSaveFilter = async () => {
@@ -596,8 +620,8 @@ export default function CompanyLeadSearch() {
     setSelectedEmployeeSize(filters.selectedEmployeeSize || "");
     setSelectedAnnualRevenue(filters.selectedAnnualRevenue || "");
     setRequestedResultCount(filters.requestedResultCount || "");
+    setSavedFilterNotice(filters.companyEntityTarget === "parent-company" ? `Applied parent-company filter “${view.name}”.` : `Applied filter “${view.name}”.`);
     setSearched(Boolean(filters.requestedResultCount));
-    setSavedFilterNotice(`Applied filter “${view.name}”.`);
     if (filters.selectedCountry) {
       try {
         const regions = await api<LocationState[]>(`/api/locations/countries/${filters.selectedCountry}/states`);
@@ -674,26 +698,32 @@ export default function CompanyLeadSearch() {
       return;
     }
     try {
+      const parentRows = buildParentCompanyOutreachRows(rows);
       const response = await fetch("/api/outreach", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          leads: rows.map((lead) => ({
-            companyName: lead.company,
+          leads: parentRows.map((lead) => ({
+            companyName: lead.companyName,
+            parentCompanyName: lead.parentCompanyName,
+            parentCompanyEmail: lead.parentCompanyEmail,
+            parentFounderEmail: lead.parentFounderEmail,
+            branchCount: lead.branchCount,
+            branchLocations: lead.branchLocations,
             category: lead.category,
             opportunity: lead.opportunity,
             score: lead.score,
             email: lead.email,
             phone: lead.phone,
             website: lead.website,
-            location: selectedCity ? `${selectedCity}, ${selectedCountry || lead.location}` : (selectedCountry || lead.location),
+            location: lead.location,
             searchMode,
           })),
         }),
       });
       if (!response.ok) throw new Error("Failed to save outreach leads");
-      setActionNotice(`${rows.length} filtered result${rows.length === 1 ? "" : "s"} saved to Outreach.`);
+      setActionNotice(`${parentRows.length} parent compan${parentRows.length === 1 ? "y" : "ies"} saved to Outreach.`);
       setTimeout(() => setLocation("/outreach"), 800);
     } catch {
       setActionNotice("Unable to send leads to outreach. Please try again.");
@@ -762,7 +792,7 @@ export default function CompanyLeadSearch() {
         <main className="flex-1 min-w-0 p-3 lg:p-5 space-y-3">
           <div className="px-1 py-1">
             <h1 className="text-xl font-bold text-white tracking-tight">Company Lead Search</h1>
-            <p className="text-xs text-slate-400 mt-0.5">Find companies that match your target market and identify opportunities you can offer them.</p>
+            <p className="text-xs text-slate-400 mt-0.5">Find the parent company behind high-intent branches, reach the CEO or founder once, and scale one offer across every managed location.</p>
           </div>
           <section className="rounded-xl border border-slate-800 bg-[#071321]/90 p-4 lg:p-5">
             <SectionTitle number="1" title="Where are you looking for businesses?" />
@@ -865,7 +895,7 @@ export default function CompanyLeadSearch() {
             <div className="flex items-center justify-between gap-3 mb-3">
               <div>
                 <h2 className="text-sm font-semibold text-white">Company Profile Filters</h2>
-                <p className="text-[10px] text-slate-500 mt-1">Narrow company results by organization size and annual revenue.</p>
+                <p className="text-[10px] text-slate-500 mt-1">Target the parent organization by size and revenue; matching branches roll up into one company result.</p>
               </div>
               <Building2 className="w-4 h-4 text-violet-400" />
             </div>
@@ -909,16 +939,16 @@ export default function CompanyLeadSearch() {
 
           <section className="rounded-xl border border-slate-800 bg-[#071321]/90 overflow-hidden">
             <div className="p-4 flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-2"><SectionTitle number="4" title="Results" inline /><span className="text-xs text-violet-300">› {searched && resultCount > 0 ? `${resultCount.toLocaleString()} businesses found (showing ${Math.min(visibleLeads.length, resultCount)} preview rows)` : "Set a target count to search"}</span></div></div>{actionNotice && <div className="mx-4 mb-3 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-[10px] text-emerald-300">{actionNotice}</div>}<div className="px-4 py-3 border-b border-slate-800 flex flex-wrap gap-2">{["All", "No Website", "Weak Website", "Outdated Website", "Poor Mobile", "Weak SEO", "Media Opportunity", "Low Visibility", "Weak Reviews", "Weak Social Media"].map((tab) => { const value = tab === "Poor Mobile" ? "Poor Mobile Exp." : tab; const active = selectedTab === value; return <button key={tab} onClick={() => setSelectedTab(value)} className={`rounded-md border px-2.5 py-1.5 text-[10px] font-medium transition-colors ${active ? "border-violet-400 bg-white text-slate-950 ring-2 ring-violet-400/40" : "border-slate-700 bg-white text-slate-950 hover:bg-slate-100"}`}>{tab} {tab === "All" && searched ? `(${resultCount.toLocaleString()})` : ""}</button>; })}</div><div className="px-4 py-3 border-b border-slate-800 bg-[#06101c]"><div className="mb-2 text-[10px] uppercase tracking-wide text-slate-500">Contact &amp; business data</div><div className="flex flex-wrap gap-2">{availabilityFilterOptions.map((filter) => <button key={filter} aria-label={`Filter results by ${filter}`} title={`Filter results by ${filter}`} onClick={() => toggleDataFilter(filter)} className={`rounded-md border px-2.5 py-1.5 text-[10px] font-medium leading-tight ${selectedDataFilters.includes(filter) ? "border-blue-300 bg-blue-600 text-white ring-2 ring-blue-300/40" : "border-slate-300 bg-white text-slate-950 hover:bg-slate-100"}`}>{filter}{selectedDataFilters.includes(filter) ? " ✓" : ""}</button>)}</div></div><div className="mx-4 mb-3 grid grid-cols-1 gap-2 rounded-lg border border-slate-800 bg-slate-950/40 p-2 sm:grid-cols-5"><div data-results-region="former-website-business-email" className="sm:col-span-2 inline-flex min-w-0 flex-wrap items-center gap-2"><span className="text-[10px] uppercase tracking-wide text-slate-400">Saved filters</span><input aria-label="Saved filter name" value={savedFilterName} onChange={(event) => setSavedFilterName(event.target.value)} placeholder="Name this filter" className="min-w-0 flex-1 rounded-md border border-slate-700 bg-slate-900/70 px-2.5 py-1.5 text-[10px] text-white outline-none placeholder:text-slate-600" /><button onClick={handleSaveFilter} disabled={savedFiltersLoading} className="rounded-md bg-violet-600 px-3 py-1.5 text-[10px] font-semibold text-white hover:bg-violet-500 disabled:opacity-50">{savedFiltersLoading ? "Saving…" : "Save Filter"}</button>{savedFilterNotice && <span className="text-[10px] text-emerald-300">{savedFilterNotice}</span>}</div><div data-results-region="former-phone-whatsapp-google-profile" className="sm:col-span-3 flex min-w-0 flex-wrap items-center justify-end gap-2">{savedFilters.length > 0 && <div className="flex min-w-0 flex-wrap gap-2">{savedFilters.map((view) => <div key={view.id} className="inline-flex items-center rounded-md border border-violet-500/30 bg-violet-500/10"><button onClick={() => void handleApplySavedFilter(view)} className="max-w-[150px] truncate px-2.5 py-1.5 text-[10px] text-violet-200 hover:text-white">{view.name}</button><button aria-label={`Delete saved filter ${view.name}`} onClick={() => void handleDeleteSavedFilter(view.id)} className="border-l border-violet-500/30 px-1.5 text-violet-300 hover:text-white"><X className="h-3 w-3" /></button></div>)}</div>}<button onClick={handleExport} className="inline-flex items-center gap-2 rounded-md border border-slate-700 px-3 py-1.5 text-[10px] text-slate-300"><Download className="h-3.5 w-3.5" />Export <ChevronDown className="h-3.5 w-3.5" /></button><button aria-label="Choose result columns" className="inline-flex items-center gap-2 rounded-md border border-slate-700 px-3 py-1.5 text-[10px] text-slate-300"><Database className="h-3.5 w-3.5" />Columns</button></div></div>
-            <div className="overflow-x-auto"><table className="w-full min-w-[760px] table-fixed text-left"><thead className="bg-[#06101c] text-[10px] text-slate-500"><tr><th className="px-4 py-3"><input type="checkbox" aria-label="Select all" checked={visibleLeads.length > 0 && visibleLeads.every((lead) => selectedRowIds.includes(lead.id))} onChange={() => setSelectedRowIds(visibleLeads.every((lead) => selectedRowIds.includes(lead.id)) ? [] : visibleLeads.map((lead) => lead.id))} /></th><th className="px-2 py-3">Business Name</th><th className="px-2 py-3">Category</th><th className="px-2 py-3">Opportunity</th><th className="px-2 py-3">Score</th><th className="px-2 py-3">Actions</th></tr></thead><tbody className="divide-y divide-slate-800/80">{visibleLeads.map((lead) => <tr key={lead.id} onClick={() => setSelectedLeadId(lead.id)} className={`text-[10px] cursor-pointer ${selectedLeadId === lead.id ? "bg-violet-500/8" : "hover:bg-slate-900/70"}`}><td className="px-4 py-3"><input type="checkbox" aria-label={`Select ${lead.company}`} checked={selectedRowIds.includes(lead.id)} onClick={(event) => event.stopPropagation()} onChange={() => toggleRowSelection(lead.id)} /></td><td className="px-2 py-3"><div className="font-medium text-white">{lead.company}</div><div className="text-[9px] text-slate-500">{selectedCity ? `${selectedCity}, ` : ""}{selectedCountry || lead.location}</div></td><td className="px-2 py-3 text-slate-400">{lead.category}</td><td className="px-2 py-3"><span className="px-2 py-1 rounded bg-violet-500/20 text-violet-200">{lead.opportunity}</span></td><td className="px-2 py-3"><span className={`inline-grid place-items-center w-8 h-8 rounded-full border ${scoreClass(lead.score)}`}>{lead.score}</span></td><td className="px-2 py-3"><div className="flex items-center gap-1"><button className="p-1.5 rounded hover:bg-slate-800"><Eye className="w-3.5 h-3.5 text-slate-400" /></button><button className="p-1.5 rounded hover:bg-slate-800"><MoreHorizontal className="w-3.5 h-3.5 text-slate-400" /></button></div></td></tr>)}</tbody></table></div>
+            <div className="overflow-x-auto"><table className="w-full min-w-[760px] table-fixed text-left"><thead className="bg-[#06101c] text-[10px] text-slate-500"><tr><th className="px-4 py-3"><input type="checkbox" aria-label="Select all" checked={visibleLeads.length > 0 && visibleLeads.every((lead) => selectedRowIds.includes(lead.id))} onChange={() => setSelectedRowIds(visibleLeads.every((lead) => selectedRowIds.includes(lead.id)) ? [] : visibleLeads.map((lead) => lead.id))} /></th><th className="px-2 py-3">Company / Parent</th><th className="px-2 py-3">Category</th><th className="px-2 py-3">Opportunity</th><th className="px-2 py-3">Score</th><th className="px-2 py-3">Actions</th></tr></thead><tbody className="divide-y divide-slate-800/80">{visibleLeads.map((lead) => <tr key={lead.id} onClick={() => setSelectedLeadId(lead.id)} className={`text-[10px] cursor-pointer ${selectedLeadId === lead.id ? "bg-violet-500/8" : "hover:bg-slate-900/70"}`}><td className="px-4 py-3"><input type="checkbox" aria-label={`Select ${lead.company}`} checked={selectedRowIds.includes(lead.id)} onClick={(event) => event.stopPropagation()} onChange={() => toggleRowSelection(lead.id)} /></td><td className="px-2 py-3"><div className="font-medium text-white">{getCompanyHierarchy(lead.parentCompanyId).parentCompanyName}</div><div className="text-[9px] text-slate-500">{lead.company} · {getCompanyHierarchy(lead.parentCompanyId).branchLocations.length || 1} branch{(getCompanyHierarchy(lead.parentCompanyId).branchLocations.length || 1) === 1 ? "" : "es"}</div></td><td className="px-2 py-3 text-slate-400">{lead.category}</td><td className="px-2 py-3"><span className="px-2 py-1 rounded bg-violet-500/20 text-violet-200">{lead.opportunity}</span></td><td className="px-2 py-3"><span className={`inline-grid place-items-center w-8 h-8 rounded-full border ${scoreClass(lead.score)}`}>{lead.score}</span></td><td className="px-2 py-3"><div className="flex items-center gap-1"><button className="p-1.5 rounded hover:bg-slate-800"><Eye className="w-3.5 h-3.5 text-slate-400" /></button><button className="p-1.5 rounded hover:bg-slate-800"><MoreHorizontal className="w-3.5 h-3.5 text-slate-400" /></button></div></td></tr>)}</tbody></table></div>
           </section>
 
           <section className="grid grid-cols-1 xl:grid-cols-3 gap-3">
-            <div className="xl:col-span-1 rounded-xl border border-slate-800 bg-[#071321]/90 overflow-hidden"><div className={`h-32 bg-gradient-to-br ${selectedLead.accent} relative`}><div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,.35),transparent_30%)]" /><span className="absolute left-3 bottom-3 px-2 py-1 rounded bg-violet-700 text-[9px] text-white">{selectedLead.opportunity}</span></div><div className="p-4"><div className="flex items-start justify-between"><div><h3 className="text-lg font-semibold text-white">{selectedLead.company}</h3><p className="text-[10px] text-slate-500 mt-1">{selectedLead.category} · {selectedCity ? `${selectedCity}, ` : ""}{selectedCountry || selectedLead.location}</p></div><Star className="w-4 h-4 text-slate-500" /></div><a href={`https://${selectedLead.website}`} className="inline-flex items-center gap-1 text-[10px] text-violet-300 mt-3">View on Google Maps <ExternalLink className="w-3 h-3" /></a><div className="mt-4 text-[10px] text-slate-500">Opportunity Score</div><div className="flex items-end gap-2 mt-1"><span className="text-4xl font-semibold text-emerald-400">{selectedLead.score}</span><span className="text-xs text-slate-500 mb-1">/100</span><span className="mb-1 px-2 py-1 rounded bg-emerald-500/15 text-emerald-300">Very High Opportunity</span></div><p className="text-[10px] text-slate-400 mt-3">This business has a very high potential for your outreach.</p></div></div>
-            <div className="rounded-xl border border-slate-800 bg-[#071321]/90 p-4"><h3 className="text-sm font-medium text-white">Why is this a high opportunity?</h3><div className="mt-4 space-y-3 text-[11px]">{[selectedLead.reason, "No online booking system", "Weak social media presence", selectedLead.reviews, "High search volume for this business"].map((reason) => <div key={reason} className="flex items-center gap-2 text-slate-300"><Check className="w-4 h-4 text-emerald-400" />{reason}</div>)}<div className="flex items-center gap-2 text-slate-500"><X className="w-4 h-4 text-orange-400" />Competitors have better websites</div></div></div>
+            <div className="xl:col-span-1 rounded-xl border border-slate-800 bg-[#071321]/90 overflow-hidden"><div className={`h-32 bg-gradient-to-br ${selectedLead.accent} relative`}><div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,.35),transparent_30%)]" /><span className="absolute left-3 bottom-3 px-2 py-1 rounded bg-violet-700 text-[9px] text-white">{selectedLead.opportunity}</span></div><div className="p-4"><div className="flex items-start justify-between"><div><h3 className="text-lg font-semibold text-white">{selectedCompany.parentCompanyName}</h3><p className="text-[10px] text-slate-500 mt-1">Parent company · {selectedCompany.branchLocations.length || 1} branch{(selectedCompany.branchLocations.length || 1) === 1 ? "" : "es"}</p><p className="text-[10px] text-slate-500 mt-1">Selected branch: {selectedLead.company} · {selectedLead.location}</p></div><Star className="w-4 h-4 text-slate-500" /></div><a href={`https://${selectedLead.website}`} className="inline-flex items-center gap-1 text-[10px] text-violet-300 mt-3">View headquarters on Google Maps <ExternalLink className="w-3 h-3" /></a><div className="mt-4 text-[10px] text-slate-500">Opportunity Score</div><div className="flex items-end gap-2 mt-1"><span className="text-4xl font-semibold text-emerald-400">{selectedLead.score}</span><span className="text-xs text-slate-500 mb-1">/100</span><span className="mb-1 px-2 py-1 rounded bg-emerald-500/15 text-emerald-300">Very High Opportunity</span></div><p className="text-[10px] text-slate-400 mt-3">This company has a very high potential for a multi-location outreach strategy.</p></div></div>
+            <div className="rounded-xl border border-slate-800 bg-[#071321]/90 p-4"><h3 className="text-sm font-medium text-white">Why is this a high opportunity?</h3><div className="mt-4 space-y-3 text-[11px]">{[selectedLead.reason, "No online booking system", "Weak social media presence", selectedLead.reviews, "Opportunity across the parent company’s managed branches"].map((reason) => <div key={reason} className="flex items-center gap-2 text-slate-300"><Check className="w-4 h-4 text-emerald-400" />{reason}</div>)}<div className="flex items-center gap-2 text-slate-500"><X className="w-4 h-4 text-orange-400" />Competitors have better websites</div></div></div>
             <div className="rounded-xl border border-slate-800 bg-[#071321]/90 p-4 relative"><button className="absolute right-4 top-4 p-1 rounded-full border border-slate-700 text-slate-400 hover:text-white"><X className="w-4 h-4" /></button><h3 className="text-sm font-medium text-white">Recommended Service / Offer</h3><div className="mt-5 flex items-center gap-2 text-violet-300"><Sparkles className="w-5 h-5" />{selectedLead.service}</div><p className="text-[11px] text-slate-400 leading-relaxed mt-4">Perfect opportunity to offer a professional service that builds trust and drives more customers.</p><button onClick={handleUseForOutreach} className="mt-5 inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-violet-600 text-xs font-semibold text-white hover:bg-violet-500"><Mail className="w-4 h-4" />Use for Outreach</button></div>
           </section>
 
-          <section className="rounded-xl border border-slate-800 bg-[#071321]/90 overflow-hidden"><div className="border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 px-4"><div className="flex items-center gap-5 overflow-x-auto">{["Business Info", "Contact & Business Data", "Opportunity Insights", "Notes", "Outreach History"].map((tab, index) => <button key={tab} className={`py-4 text-[10px] whitespace-nowrap border-b-2 ${index === 0 ? "text-violet-300 border-violet-500" : "text-slate-500 border-transparent"}`}>{tab}</button>)}</div><div className="flex items-center gap-2 py-2"><span className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-300 grid place-items-center text-[10px]">AI</span><span className="text-xs text-slate-300">AI Outreach Preview</span><select value={outreachLanguage} onChange={(event) => setOutreachLanguage(event.target.value)} className="ml-3 bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-[10px] text-slate-300"><option>English</option><option>Spanish</option><option>French</option></select></div></div><div className="grid grid-cols-1 lg:grid-cols-3"><div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-5 p-5 text-[11px] border-r border-slate-800"><InfoItem icon={Globe2} label="Website" value={`https://${selectedLead.website}`} /><InfoItem icon={MapPin} label="Address" value={`123 Main St, ${selectedCity || "Los Angeles"}, ${selectedRegion || "CA"}, ${selectedCountry || "USA"}`} /><InfoItem icon={CalendarDays} label="Founded" value="2015" /><InfoItem icon={Mail} label="Business Email" value={selectedLead.email} /><InfoItem icon={MapPin} label="Google Business Profile" value="View on Google" /><InfoItem icon={Users} label="Employees" value="11-50" /><InfoItem icon={Phone} label="Phone Number" value={selectedLead.phone} /><InfoItem icon={Building2} label="Category" value={selectedLead.category} /><InfoItem icon={UserRound} label="Owner" value="Marco Rossi" /></div><div className="p-5 bg-[#06101c]"><div className="text-[11px] text-slate-300 leading-relaxed space-y-4"><p>Hi {selectedLead.company},</p><p>I noticed your restaurant in {selectedCity || "Los Angeles"} has a lot of potential, but your website could better showcase your amazing food and attract more customers.</p><p>I’d love to help you improve your online presence and grow your business.</p><p>Would you be open to a quick chat?</p></div><button className="mt-5 w-full py-2.5 rounded-lg border border-emerald-500/50 text-emerald-300 text-xs hover:bg-emerald-500/10">Generate {outreachLanguage} version</button></div></div></section>
+          <section className="rounded-xl border border-slate-800 bg-[#071321]/90 overflow-hidden"><div className="border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 px-4"><div className="flex items-center gap-5 overflow-x-auto">{["Business Info", "Contact & Business Data", "Opportunity Insights", "Notes", "Outreach History"].map((tab, index) => <button key={tab} className={`py-4 text-[10px] whitespace-nowrap border-b-2 ${index === 0 ? "text-violet-300 border-violet-500" : "text-slate-500 border-transparent"}`}>{tab}</button>)}</div><div className="flex items-center gap-2 py-2"><span className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-300 grid place-items-center text-[10px]">AI</span><span className="text-xs text-slate-300">AI Outreach Preview</span><select value={outreachLanguage} onChange={(event) => setOutreachLanguage(event.target.value)} className="ml-3 bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-[10px] text-slate-300"><option>English</option><option>Spanish</option><option>French</option></select></div></div><div className="grid grid-cols-1 lg:grid-cols-3"><div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-5 p-5 text-[11px] border-r border-slate-800"><InfoItem icon={Building2} label="Parent Company" value={selectedCompany.parentCompanyName} /><InfoItem icon={MapPin} label="Headquarters" value={selectedCompany.headquartersLocation} /><InfoItem icon={Layers3} label="Managed Branches" value={`${selectedCompany.branchLocations.length || 1} location${(selectedCompany.branchLocations.length || 1) === 1 ? "" : "s"}`} /><InfoItem icon={Globe2} label="Parent Website" value={`https://${selectedLead.website}`} /><InfoItem icon={Mail} label="Company Email" value={selectedCompany.parentCompanyEmail || selectedLead.email} /><InfoItem icon={UserRound} label="CEO / Founder Email" value={selectedCompany.parentFounderEmail || selectedLead.founderEmail || "Not found"} /><InfoItem icon={Linkedin} label="Parent LinkedIn" value={selectedCompany.parentLinkedinProfile || selectedLead.linkedinProfile || "Not found"} /><InfoItem icon={Users} label="Employees" value={selectedLead.employeeCount.toLocaleString()} /><InfoItem icon={BarChart3} label="Annual Revenue" value={`$${(selectedLead.annualRevenue / 1_000_000).toFixed(1)}M`} /><InfoItem icon={Phone} label="Branch Phone" value={selectedLead.phone} /></div><div className="p-5 bg-[#06101c]"><div className="text-[11px] text-slate-300 leading-relaxed space-y-4"><p>Hi {selectedCompany.parentCompanyName},</p><p>I noticed {selectedLead.company} is one of {selectedCompany.branchLocations.length || 1} managed locations for {selectedCompany.parentCompanyName}. The group has an opportunity to strengthen its online presence across every branch.</p><p>I’d love to help you improve your online presence and grow your business.</p><p>Would you be open to a quick chat?</p></div><button className="mt-5 w-full py-2.5 rounded-lg border border-emerald-500/50 text-emerald-300 text-xs hover:bg-emerald-500/10">Generate {outreachLanguage} version</button></div></div></section>
         </main>
       </div>
     </div>

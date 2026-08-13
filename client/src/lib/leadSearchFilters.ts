@@ -18,13 +18,16 @@ export type AvailabilityFilter = CanonicalAvailabilityFilter | LegacyAvailabilit
 export type LeadFilterRecord = {
   opportunity: string;
   email?: string;
+  companyEmail?: string;
   ownerEmail?: string;
   founderEmail?: string;
+  parentFounderEmail?: string;
   phone?: string;
   whatsapp?: string;
   facebookPage?: string;
   instagram?: string;
   linkedinProfile?: string;
+  parentLinkedinProfile?: string;
   googleProfile?: string;
   website?: string;
 };
@@ -33,11 +36,11 @@ export function hasAvailableData(lead: LeadFilterRecord, filter: AvailabilityFil
   switch (filter) {
     case "Business Email":
     case "Email":
-      return Boolean(lead.email?.trim());
+      return Boolean((lead.companyEmail ?? lead.email)?.trim());
     case "Owner / Manager Email":
       return Boolean(lead.ownerEmail?.trim());
     case "CEO / Founder Email":
-      return Boolean(lead.founderEmail?.trim());
+      return Boolean((lead.parentFounderEmail ?? lead.founderEmail)?.trim());
     case "Phone Number":
     case "Phone":
       return Boolean(lead.phone?.trim());
@@ -49,7 +52,7 @@ export function hasAvailableData(lead: LeadFilterRecord, filter: AvailabilityFil
     case "Instagram":
       return Boolean(lead.instagram?.trim());
     case "LinkedIn Profile":
-      return Boolean(lead.linkedinProfile?.trim());
+      return Boolean((lead.parentLinkedinProfile ?? lead.linkedinProfile)?.trim());
     case "Google Business Profile":
     case "Google Profile":
       return Boolean(lead.googleProfile?.trim());

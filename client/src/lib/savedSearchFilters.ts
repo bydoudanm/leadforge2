@@ -16,6 +16,9 @@ export type SavedFilterPayload = {
   requestedResultCount: string;
   selectedEmployeeSize?: string;
   selectedAnnualRevenue?: string;
+  companyEntityTarget?: "parent-company";
+  rollUpBranches?: boolean;
+  companyContactTarget?: "parent-company";
 };
 
 export type SavedFilterView = {

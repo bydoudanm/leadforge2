@@ -179,3 +179,57 @@ describe("LeadForge JSON API", () => {
     await expect(response.json()).resolves.toEqual({ error: "Enter a valid email and password" });
   });
 });
+
+
+describe("Company Lead Search outreach persistence", () => {
+  beforeAll(async () => {
+    process.env.NODE_ENV = "test";
+    const module = await import("./index");
+    const created = await module.createApp();
+    server = created.server;
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+    const address = server.address();
+    if (!address || typeof address === "string") throw new Error("Parent-company API test server did not bind");
+    baseUrl = `http://127.0.0.1:${address.port}`;
+  });
+
+  afterAll(async () => {
+    await new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
+  });
+
+  it("stores parent-company contact and branch rollup fields", async () => {
+    vi.spyOn(db, "getSessionByHash").mockResolvedValue({ user: { id: 42, name: "Test User", email: "test@example.com", plan: "free_trial" } } as never);
+    const insertIntoOutreachLists = vi.spyOn(db, "insertIntoOutreachLists").mockResolvedValue(undefined);
+
+    const response = await fetch(`${baseUrl}/api/outreach`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: "leadforge_session=authenticated-test" },
+      body: JSON.stringify({
+        leads: [{
+          companyName: "Pacific Table Hospitality Group",
+          parentCompanyName: "Pacific Table Hospitality Group",
+          parentCompanyEmail: "partnerships@pacifictablehospitality.com",
+          parentFounderEmail: "elena.rossi@pacifictablehospitality.com",
+          branchCount: 4,
+          branchLocations: ["Los Angeles, CA", "Santa Monica, CA", "Pasadena, CA", "San Diego, CA"],
+          category: "Restaurant",
+          opportunity: "Weak Website",
+          score: 92,
+          email: "partnerships@pacifictablehospitality.com",
+          searchMode: "company",
+        }],
+      }),
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ success: true, count: 1 });
+    expect(insertIntoOutreachLists).toHaveBeenCalledWith([expect.objectContaining({
+      userId: 42,
+      companyName: "Pacific Table Hospitality Group",
+      parentCompanyEmail: "partnerships@pacifictablehospitality.com",
+      branchCount: 4,
+      branchLocationsJson: JSON.stringify(["Los Angeles, CA", "Santa Monica, CA", "Pasadena, CA", "San Diego, CA"]),
+      searchMode: "company",
+    })]);
+  });
+});
