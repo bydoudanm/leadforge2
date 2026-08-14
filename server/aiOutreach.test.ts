@@ -31,6 +31,8 @@ describe("AI Outreach Generation", () => {
       category: "Restaurant",
       location: "Madrid, ES",
       language: "English",
+      socialProfiles: ["linkedin.com/company/madrid-hospitality"],
+      latestNews: "Group expansion signal",
     });
 
     expect(messages.system).toContain("Company Acquisition Agent");
@@ -38,6 +40,8 @@ describe("AI Outreach Generation", () => {
     expect(messages.user).toContain("Madrid Hospitality Group");
     expect(messages.user).toContain("3 managed locations");
     expect(messages.user).toContain("parent company's branches");
+    expect(messages.user).toContain("linkedin.com/company/madrid-hospitality");
+    expect(messages.user).toContain("Group expansion signal");
     expect(messages.user).toContain("Do not address the branch owner as an individual");
   });
 

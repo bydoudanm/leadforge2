@@ -138,3 +138,9 @@
 - [ ] Audit and separate Individual versus Company outreach messaging and generation context.
 - [ ] Add tests and browser verification for permanent Individual/Company mode separation.
 - [ ] Save a checkpoint after the mode-separation update.
+
+- [x] Add company social-profile links and latest-news context to Company Lead Search results and details.
+- [x] Add an Outreach Queue filter to switch between Individual and Company campaigns.
+- [x] Add a clearly labeled demo company result and verify Company-mode outreach generation quality with tests and browser checks.
+
+- [x] Add visible social/news indicators to Company Lead Search result rows, then re-run tests and browser verification.

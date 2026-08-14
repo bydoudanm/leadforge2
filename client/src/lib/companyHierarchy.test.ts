@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildParentCompanyOutreachRows, rollUpCompanyResults, type CompanyHierarchyLead } from "./companyHierarchy";
+import { buildParentCompanyOutreachRows, getCompanyHierarchy, rollUpCompanyResults, type CompanyHierarchyLead } from "./companyHierarchy";
 
 const sampleLeads: CompanyHierarchyLead[] = [
   {
@@ -47,6 +47,14 @@ describe("company hierarchy semantics", () => {
     expect(rolledUp.find((lead) => lead.parentCompanyId === "parent-a")?.company).toBe("Airport Branch");
   });
 
+  it("exposes demo-company social and intelligence signals in the parent profile", () => {
+    const profile = getCompanyHierarchy("atlas-commerce-demo");
+    expect(profile.parentCompanyName).toContain("Demo");
+    expect(profile.parentLinkedinProfile).toContain("atlas-commerce-group-demo");
+    expect(profile.parentInstagram).toContain("atlascommercegroupdemo");
+    expect(profile.latestNews?.demoOnly).toBe(true);
+  });
+
   it("creates one parent-company outreach target per hierarchy group", () => {
     const rows = buildParentCompanyOutreachRows(sampleLeads, {
       "parent-a": {
@@ -56,6 +64,8 @@ describe("company hierarchy semantics", () => {
         parentCompanyEmail: "hq@madridhospitality.example",
         parentFounderEmail: "founder@madridhospitality.example",
         parentLinkedinProfile: "linkedin.com/company/madrid-hospitality",
+        parentInstagram: "instagram.com/madrid-hospitality",
+        latestNews: { headline: "Group expansion signal", source: "Test fixture", publishedAt: "Test" },
         branchLocations: ["Madrid, ES", "Toledo, ES"],
       },
       "parent-b": {
@@ -74,6 +84,9 @@ describe("company hierarchy semantics", () => {
       email: "hq@madridhospitality.example",
       branchCount: 2,
       searchMode: "company",
+      parentLinkedinProfile: "linkedin.com/company/madrid-hospitality",
+      parentInstagram: "instagram.com/madrid-hospitality",
+      latestNews: { headline: "Group expansion signal", source: "Test fixture", publishedAt: "Test" },
     });
   });
 });

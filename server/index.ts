@@ -116,6 +116,8 @@ export async function createApp() {
       category: z.string().optional(),
       location: z.string().optional(),
       language: z.string().default("English"),
+      socialProfiles: z.array(z.string()).optional(),
+      latestNews: z.string().optional(),
     }).refine((value) => value.searchMode === "company"
       ? Boolean(value.parentCompanyName && value.branchName)
       : Boolean(value.businessName), { message: "Mode-specific outreach fields are required" }).safeParse(request.body);
@@ -125,8 +127,8 @@ export async function createApp() {
       return;
     }
 
-    const { searchMode, businessName, recipientName, recipientRole, parentCompanyName, branchName, branchCount, opportunity, category, location, language } = parsed.data;
-    const agentInput = { searchMode, businessName, recipientName, recipientRole, parentCompanyName, branchName, branchCount, opportunity, category, location, language } as const;
+    const { searchMode, businessName, recipientName, recipientRole, parentCompanyName, branchName, branchCount, opportunity, category, location, language, socialProfiles, latestNews } = parsed.data;
+    const agentInput = { searchMode, businessName, recipientName, recipientRole, parentCompanyName, branchName, branchCount, opportunity, category, location, language, socialProfiles, latestNews } as const;
     const messages = buildOutreachAgentMessages(agentInput);
 
     try {

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import ThemeToggle from "@/components/ThemeToggle";
 import AcquisitionSidebar from "@/components/AcquisitionSidebar";
+import { filterOutreachItems, type OutreachQueueFilter } from "@/lib/outreachQueue";
 
 type User = { id: number; name: string | null; email: string; plan: string };
 type OutreachItem = {
@@ -46,6 +47,7 @@ export default function Outreach() {
   const [user, setUser] = useState<User | null>(null);
   const [items, setItems] = useState<OutreachItem[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [queueFilter, setQueueFilter] = useState<OutreachQueueFilter>("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -79,6 +81,8 @@ export default function Outreach() {
       });
     return () => { active = false; };
   }, [user]);
+
+  const filteredItems = filterOutreachItems(items, queueFilter);
 
   if (error) return <div className="min-h-screen bg-[#020914] text-red-300 grid place-items-center p-6">{error}</div>;
   if (!user || loading) return <div className="min-h-screen bg-[#020914] text-slate-300 grid place-items-center">Loading Outreach…</div>;
@@ -123,8 +127,8 @@ export default function Outreach() {
           </div>
 
           <div className="rounded-xl border border-slate-800 bg-[#071321]/90 overflow-hidden">
-            <div className="p-4 border-b border-slate-800 flex items-center justify-between"><div className="text-xs font-medium text-white">Queued Targets ({items.length})</div><div className="text-[10px] text-slate-400">Campaign Mode: AI Automated Sequence</div></div>
-            {items.length === 0 ? <div className="p-12 text-center text-slate-400 text-xs">No outreach targets yet. Use <span className="text-violet-300 font-medium">Lead Search · Individual</span> or <span className="text-violet-300 font-medium">Company Lead Search · Company</span> to add targeted prospects.</div> : <div className="space-y-4 p-4"><OutreachModeTable mode="company" items={items.filter((item) => item.searchMode === "company")} /><OutreachModeTable mode="individual" items={items.filter((item) => item.searchMode !== "company")} /></div>}
+            <div className="p-4 border-b border-slate-800 space-y-3"><div className="flex flex-wrap items-center justify-between gap-3"><div className="text-xs font-medium text-white">Queued Targets ({filteredItems.length}{queueFilter === "all" ? "" : ` of ${items.length}`})</div><div className="text-[10px] text-slate-400">Campaign Mode: AI Automated Sequence</div></div><div className="flex flex-wrap gap-2" role="group" aria-label="Filter outreach campaigns">{([["all", "All campaigns"], ["individual", "Individual campaigns"], ["company", "Company campaigns"]] as const).map(([value, label]) => <button key={value} type="button" aria-pressed={queueFilter === value} onClick={() => setQueueFilter(value)} className={`rounded-md border px-3 py-1.5 text-[10px] font-medium ${queueFilter === value ? "border-violet-400 bg-violet-600 text-white" : "border-slate-700 bg-slate-900/50 text-slate-400 hover:border-violet-400 hover:text-white"}`}>{label}</button>)}</div></div>
+            {filteredItems.length === 0 ? <div className="p-12 text-center text-slate-400 text-xs">{items.length === 0 ? <>No outreach targets yet. Use <span className="text-violet-300 font-medium">Lead Search · Individual</span> or <span className="text-violet-300 font-medium">Company Lead Search · Company</span> to add targeted prospects.</> : <>No {queueFilter === "company" ? "company" : "individual"} campaigns are currently queued.</>}</div> : <div className="space-y-4 p-4"><OutreachModeTable mode="company" items={filteredItems.filter((item) => item.searchMode === "company")} /><OutreachModeTable mode="individual" items={filteredItems.filter((item) => item.searchMode !== "company")} /></div>}
           </div>
         </main>
       </div>
