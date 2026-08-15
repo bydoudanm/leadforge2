@@ -133,11 +133,11 @@
 - [x] Add Vitest coverage proving suggested-match and exact-query Business Type searches change result sets and scoring inputs
 - [x] Reverify custom Business Type execution and result counts in both search routes
 
-- [ ] Audit Sidebar, routes, and page labels so Lead Search is clearly Individual and Company Lead Search is clearly Company.
-- [ ] Audit and separate mode-specific search behavior, opportunity context, and result semantics without changing the established style.
-- [ ] Audit and separate Individual versus Company outreach messaging and generation context.
-- [ ] Add tests and browser verification for permanent Individual/Company mode separation.
-- [ ] Save a checkpoint after the mode-separation update.
+- [x] Audit Sidebar, routes, and page labels so Lead Search is clearly Individual and Company Lead Search is clearly Company.
+- [x] Audit and separate mode-specific search behavior, opportunity context, and result semantics without changing the established style.
+- [x] Audit and separate Individual versus Company outreach messaging and generation context.
+- [x] Add tests and browser verification for permanent Individual/Company mode separation.
+- [x] Save a checkpoint after the mode-separation update.
 
 - [x] Add company social-profile links and latest-news context to Company Lead Search results and details.
 - [x] Add an Outreach Queue filter to switch between Individual and Company campaigns.
@@ -159,3 +159,6 @@
 - [x] Browser-verify Inbox state changes by toggling a temporary inbox from Active to Paused and removing it cleanly.
 - [x] Browser-verify multi-inbox rotation by creating two temporary inboxes, selecting both, saving the ordered pool and delay, and removing both afterward.
 - [x] Verify the rotation-next API advances the persisted cursor with realistic connected-inbox fixtures.
+
+- [x] Export the actual Inbox Rotation source files, database migration, API contract, shared round-robin logic, UI integration, tests, and portability guide for reuse in another project.
+- [x] Browser-verify Individual vs Company mode separation across both routes, shared Sidebar labels, results semantics, detail panels, and outreach generation context.
