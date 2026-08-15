@@ -238,3 +238,61 @@ export async function deleteSavedFilterView(userId: number, id: number) {
   if (!database) throw new Error("Database is not configured");
   await database.delete(schema.savedFilterViews).where(and(eq(schema.savedFilterViews.userId, userId), eq(schema.savedFilterViews.id, id)));
 }
+
+
+export async function listInboxes(userId: number) {
+  const database = await getDb();
+  if (!database) return [];
+  return database
+    .select()
+    .from(schema.inboxes)
+    .where(eq(schema.inboxes.userId, userId))
+    .orderBy(desc(schema.inboxes.createdAt));
+}
+
+export async function createInbox(userId: number, input: Omit<schema.InsertInbox, "userId">) {
+  const database = await getDb();
+  if (!database) throw new Error("Database is not configured");
+  const result = await database.insert(schema.inboxes).values({ ...input, userId });
+  const rows = await database.select().from(schema.inboxes).where(eq(schema.inboxes.id, Number(result[0].insertId))).limit(1);
+  return rows[0];
+}
+
+export async function updateInbox(userId: number, id: number, input: Partial<Omit<schema.InsertInbox, "userId">>) {
+  const database = await getDb();
+  if (!database) throw new Error("Database is not configured");
+  await database.update(schema.inboxes).set(input).where(and(eq(schema.inboxes.userId, userId), eq(schema.inboxes.id, id)));
+  const rows = await database.select().from(schema.inboxes).where(and(eq(schema.inboxes.userId, userId), eq(schema.inboxes.id, id))).limit(1);
+  return rows[0];
+}
+
+export async function deleteInbox(userId: number, id: number) {
+  const database = await getDb();
+  if (!database) throw new Error("Database is not configured");
+  await database.delete(schema.inboxes).where(and(eq(schema.inboxes.userId, userId), eq(schema.inboxes.id, id)));
+}
+
+export async function getInboxRotationSettings(userId: number) {
+  const database = await getDb();
+  if (!database) return undefined;
+  const rows = await database.select().from(schema.inboxRotationSettings).where(eq(schema.inboxRotationSettings.userId, userId)).limit(1);
+  return rows[0];
+}
+
+export async function upsertInboxRotationSettings(input: schema.InsertInboxRotationSettings) {
+  const database = await getDb();
+  if (!database) throw new Error("Database is not configured");
+  const existing = await database.select().from(schema.inboxRotationSettings).where(eq(schema.inboxRotationSettings.userId, input.userId)).limit(1);
+  if (existing[0]) {
+    await database.update(schema.inboxRotationSettings).set({
+      enabled: input.enabled,
+      strategy: input.strategy,
+      delaySeconds: input.delaySeconds,
+      selectedInboxIdsJson: input.selectedInboxIdsJson,
+      nextInboxIndex: input.nextInboxIndex,
+    }).where(eq(schema.inboxRotationSettings.userId, input.userId));
+  } else {
+    await database.insert(schema.inboxRotationSettings).values(input);
+  }
+  return getInboxRotationSettings(input.userId);
+}

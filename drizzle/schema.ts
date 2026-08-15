@@ -179,6 +179,8 @@ export const inboxes = mysqlTable("inboxes", {
   email: varchar("email", { length: 320 }).notNull(),
   provider: mysqlEnum("provider", ["gmail", "outlook", "custom"]).default("gmail").notNull(),
   isActive: boolean("isActive").default(true),
+  connectionStatus: mysqlEnum("connectionStatus", ["pending", "connected", "needs_reauth"]).default("pending").notNull(),
+  lastConnectedAt: timestamp("lastConnectedAt"),
   dailyLimit: int("dailyLimit").default(50),
   sentToday: int("sentToday").default(0),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -187,6 +189,20 @@ export const inboxes = mysqlTable("inboxes", {
 
 export type Inbox = typeof inboxes.$inferSelect;
 export type InsertInbox = typeof inboxes.$inferInsert;
+
+export const inboxRotationSettings = mysqlTable("inboxRotationSettings", {
+  userId: int("userId").primaryKey(),
+  enabled: boolean("enabled").default(false).notNull(),
+  strategy: mysqlEnum("strategy", ["round_robin"]).default("round_robin").notNull(),
+  delaySeconds: int("delaySeconds").default(60).notNull(),
+  selectedInboxIdsJson: text("selectedInboxIdsJson").notNull(),
+  nextInboxIndex: int("nextInboxIndex").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type InboxRotationSettings = typeof inboxRotationSettings.$inferSelect;
+export type InsertInboxRotationSettings = typeof inboxRotationSettings.$inferInsert;
 
 export const emailTemplates = mysqlTable("emailTemplates", {
   id: int("id").autoincrement().primaryKey(),

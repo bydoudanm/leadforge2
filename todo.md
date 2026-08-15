@@ -144,3 +144,18 @@
 - [x] Add a clearly labeled demo company result and verify Company-mode outreach generation quality with tests and browser checks.
 
 - [x] Add visible social/news indicators to Company Lead Search result rows, then re-run tests and browser verification.
+
+- [x] Add Inbox to the Sidebar and create a dedicated multi-inbox management page.
+- [x] Support adding, enabling, disabling, and removing Gmail inbox entries without exposing credentials in the UI.
+- [x] Add persisted rotation-loop settings so outreach can rotate across selected inboxes in a deterministic order.
+- [x] Add tests and browser verification for Inbox navigation, inbox selection, and rotation behavior.
+
+- [x] Add a protected rotation-next endpoint that advances the persisted round-robin index for future outreach sends and cover it with tests.
+
+- [x] Browser-verify Inbox CRUD by adding a test inbox, toggling active/paused state, and removing it from the Inbox UI.
+- [x] Browser-verify rotation settings by selecting inboxes, saving the loop, and confirming persisted selection and delay state.
+- [x] Add API verification for rotation-next after saved rotation settings to prove the persisted cursor advances with connected inbox data.
+
+- [x] Browser-verify Inbox state changes by toggling a temporary inbox from Active to Paused and removing it cleanly.
+- [x] Browser-verify multi-inbox rotation by creating two temporary inboxes, selecting both, saving the ordered pool and delay, and removing both afterward.
+- [x] Verify the rotation-next API advances the persisted cursor with realistic connected-inbox fixtures.

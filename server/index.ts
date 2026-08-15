@@ -9,7 +9,8 @@ import { endSession, getRequestUser, hashPassword, startSession, verifyPassword 
 import { isIso2Code, listLocationCities, listLocationCountries, listLocationStates } from "./locationData";
 import { buildOutreachAgentMessages, buildOutreachFallback } from "./outreachAgent";
 // Built-in forge LLM proxy helper
-import type { SavedFilterView } from "../drizzle/schema";
+import type { Inbox, SavedFilterView } from "../drizzle/schema";
+import { normalizeRotationSettings, selectNextRotationInbox } from "../shared/inboxRotation";
 
 type AuthedRequest = Request & { user?: NonNullable<Awaited<ReturnType<typeof getRequestUser>>> };
 
@@ -233,6 +234,191 @@ export async function createApp() {
     }
   });
   app.use("/api/outreach", outreachApi);
+
+  const inboxApi = express.Router();
+  inboxApi.use(requireUser);
+  inboxApi.get("/", async (request: AuthedRequest, response) => {
+    try {
+      const inboxes = await db.listInboxes(request.user!.id) as Inbox[];
+      const stored = await db.getInboxRotationSettings(request.user!.id);
+      const rotation = stored ? {
+        enabled: stored.enabled,
+        strategy: stored.strategy,
+        delaySeconds: stored.delaySeconds,
+        selectedInboxIds: JSON.parse(stored.selectedInboxIdsJson) as number[],
+        nextInboxIndex: stored.nextInboxIndex,
+      } : {
+        enabled: false,
+        strategy: "round_robin" as const,
+        delaySeconds: 60,
+        selectedInboxIds: [],
+        nextInboxIndex: 0,
+      };
+      response.json({ inboxes, rotation, connectedCount: inboxes.filter((inbox) => inbox.connectionStatus === "connected").length });
+    } catch (error) {
+      safeError(response, error);
+    }
+  });
+  inboxApi.post("/", async (request: AuthedRequest, response) => {
+    const parsed = z.object({
+      email: z.string().trim().email().transform((value) => value.toLowerCase()),
+      provider: z.enum(["gmail", "outlook", "custom"]).default("gmail"),
+      dailyLimit: z.number().int().min(1).max(500).default(50),
+    }).safeParse(request.body);
+    if (!parsed.success) {
+      response.status(400).json({ error: "Provide a valid inbox email and a daily limit between 1 and 500" });
+      return;
+    }
+    try {
+      const inbox = await db.createInbox(request.user!.id, {
+        email: parsed.data.email,
+        provider: parsed.data.provider,
+        dailyLimit: parsed.data.dailyLimit,
+        isActive: true,
+        connectionStatus: "pending",
+        sentToday: 0,
+      });
+      response.status(201).json(inbox);
+    } catch (error) {
+      safeError(response, error);
+    }
+  });
+  inboxApi.patch("/:id", async (request: AuthedRequest, response) => {
+    const id = Number(request.params.id);
+    const parsed = z.object({
+      isActive: z.boolean().optional(),
+      dailyLimit: z.number().int().min(1).max(500).optional(),
+    }).refine((value) => value.isActive !== undefined || value.dailyLimit !== undefined).safeParse(request.body);
+    if (!Number.isInteger(id) || id < 1 || !parsed.success) {
+      response.status(400).json({ error: "Provide a valid inbox id and at least one editable setting" });
+      return;
+    }
+    try {
+      const inbox = await db.updateInbox(request.user!.id, id, parsed.data);
+      if (!inbox) {
+        response.status(404).json({ error: "Inbox not found" });
+        return;
+      }
+      response.json(inbox);
+    } catch (error) {
+      safeError(response, error);
+    }
+  });
+  inboxApi.delete("/:id", async (request: AuthedRequest, response) => {
+    const id = Number(request.params.id);
+    if (!Number.isInteger(id) || id < 1) {
+      response.status(400).json({ error: "Inbox id must be a positive integer" });
+      return;
+    }
+    try {
+      await db.deleteInbox(request.user!.id, id);
+      const stored = await db.getInboxRotationSettings(request.user!.id);
+      if (stored) {
+        const inboxes = await db.listInboxes(request.user!.id) as Inbox[];
+        const rotation = normalizeRotationSettings({
+          enabled: stored.enabled,
+          strategy: stored.strategy,
+          delaySeconds: stored.delaySeconds,
+          selectedInboxIds: JSON.parse(stored.selectedInboxIdsJson) as number[],
+          nextInboxIndex: stored.nextInboxIndex,
+        }, inboxes);
+        await db.upsertInboxRotationSettings({
+          userId: request.user!.id,
+          enabled: rotation.enabled,
+          strategy: rotation.strategy,
+          delaySeconds: rotation.delaySeconds,
+          selectedInboxIdsJson: JSON.stringify(rotation.selectedInboxIds),
+          nextInboxIndex: rotation.nextInboxIndex,
+        });
+      }
+      response.status(204).end();
+    } catch (error) {
+      safeError(response, error);
+    }
+  });
+  inboxApi.patch("/rotation/settings", async (request: AuthedRequest, response) => {
+    const parsed = z.object({
+      enabled: z.boolean(),
+      delaySeconds: z.number().int().min(30).max(3600),
+      selectedInboxIds: z.array(z.number().int().positive()).max(50),
+    }).safeParse(request.body);
+    if (!parsed.success) {
+      response.status(400).json({ error: "Provide rotation settings with a delay between 30 and 3600 seconds" });
+      return;
+    }
+    try {
+      const inboxes = await db.listInboxes(request.user!.id) as Inbox[];
+      const ownedIds = new Set(inboxes.map((inbox) => inbox.id));
+      if (parsed.data.selectedInboxIds.some((id) => !ownedIds.has(id))) {
+        response.status(400).json({ error: "Rotation can only use inboxes belonging to the current account" });
+        return;
+      }
+      const stored = await db.getInboxRotationSettings(request.user!.id);
+      const normalized = normalizeRotationSettings({
+        enabled: parsed.data.enabled,
+        strategy: "round_robin",
+        delaySeconds: parsed.data.delaySeconds,
+        selectedInboxIds: parsed.data.selectedInboxIds,
+        nextInboxIndex: stored?.nextInboxIndex ?? 0,
+      }, inboxes);
+      const eligibleCount = inboxes.filter((inbox) => normalized.selectedInboxIds.includes(inbox.id) && inbox.isActive && inbox.connectionStatus === "connected" && (inbox.sentToday ?? 0) < (inbox.dailyLimit ?? 0)).length;
+      if (normalized.enabled && eligibleCount === 0) {
+        response.status(400).json({ error: "Connect at least one active Gmail inbox with remaining daily capacity before enabling rotation" });
+        return;
+      }
+      const saved = await db.upsertInboxRotationSettings({
+        userId: request.user!.id,
+        enabled: normalized.enabled,
+        strategy: normalized.strategy,
+        delaySeconds: normalized.delaySeconds,
+        selectedInboxIdsJson: JSON.stringify(normalized.selectedInboxIds),
+        nextInboxIndex: normalized.nextInboxIndex,
+      });
+      response.json({
+        enabled: saved?.enabled ?? normalized.enabled,
+        strategy: saved?.strategy ?? normalized.strategy,
+        delaySeconds: saved?.delaySeconds ?? normalized.delaySeconds,
+        selectedInboxIds: normalized.selectedInboxIds,
+        nextInboxIndex: saved?.nextInboxIndex ?? normalized.nextInboxIndex,
+        eligibleCount,
+      });
+    } catch (error) {
+      safeError(response, error);
+    }
+  });
+  inboxApi.post("/rotation/next", async (request: AuthedRequest, response) => {
+    try {
+      const stored = await db.getInboxRotationSettings(request.user!.id);
+      if (!stored?.enabled) {
+        response.status(409).json({ error: "Inbox rotation is not enabled" });
+        return;
+      }
+      const inboxes = await db.listInboxes(request.user!.id) as Inbox[];
+      const selection = selectNextRotationInbox(inboxes, {
+        enabled: stored.enabled,
+        strategy: stored.strategy,
+        delaySeconds: stored.delaySeconds,
+        selectedInboxIds: JSON.parse(stored.selectedInboxIdsJson) as number[],
+        nextInboxIndex: stored.nextInboxIndex,
+      });
+      if (!selection.inbox) {
+        response.status(409).json({ error: "No selected inbox is connected and under its daily capacity" });
+        return;
+      }
+      await db.upsertInboxRotationSettings({
+        userId: request.user!.id,
+        enabled: stored.enabled,
+        strategy: stored.strategy,
+        delaySeconds: stored.delaySeconds,
+        selectedInboxIdsJson: stored.selectedInboxIdsJson,
+        nextInboxIndex: selection.nextInboxIndex,
+      });
+      response.json({ inbox: selection.inbox, nextInboxIndex: selection.nextInboxIndex });
+    } catch (error) {
+      safeError(response, error);
+    }
+  });
+  app.use("/api/inboxes", inboxApi);
 
   const savedFiltersApi = express.Router();
   savedFiltersApi.use(requireUser);

@@ -12,7 +12,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { ArrowRight, LogOut, Mail, Menu, Target, TrendingUp, Users } from "lucide-react";
+import { ArrowRight, Inbox, LogOut, Mail, Menu, Target, TrendingUp, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -118,7 +118,7 @@ export default function Dashboard() {
           </div>
         </div>
         <nav className="flex-1 p-4 space-y-2">
-          {[{ icon: "📊", label: "Dashboard", href: "/dashboard" }, { icon: "🔎", label: "Lead Search · Individual", href: "/lead-search" }, { icon: "🏢", label: "Company Lead Search · Company", href: "/company-lead-search" }, { icon: "👥", label: "Leads" }, { icon: "📧", label: "Campaigns" }, { icon: "📈", label: "Analytics" }, { icon: "🎯", label: "Opportunities" }, { icon: "⚙️", label: "Settings", href: "/settings" }].map((item) => (
+          {[{ icon: "📊", label: "Dashboard", href: "/dashboard" }, { icon: "🔎", label: "Lead Search · Individual", href: "/lead-search" }, { icon: "🏢", label: "Company Lead Search · Company", href: "/company-lead-search" }, { icon: "👥", label: "Leads" }, { icon: "📧", label: "Campaigns" }, { icon: <Inbox className="w-4 h-4" />, label: "Inbox", href: "/inbox" }, { icon: "📈", label: "Analytics" }, { icon: "🎯", label: "Opportunities" }, { icon: "⚙️", label: "Settings", href: "/settings" }].map((item) => (
             <button key={item.label} onClick={() => item.href && setLocation(item.href)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left ${item.label === "Dashboard" ? "bg-blue-600/20 text-blue-400 border border-blue-500/30" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}>
               <span className="text-lg">{item.icon}</span>{sidebarOpen && <span className="text-sm font-medium">{item.label}</span>}
             </button>

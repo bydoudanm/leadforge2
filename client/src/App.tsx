@@ -11,6 +11,7 @@ import ProfileSettings from "./pages/ProfileSettings";
 import LeadSearch from "./pages/LeadSearch";
 import CompanyLeadSearch from "./pages/CompanyLeadSearch";
 import Outreach from "./pages/Outreach";
+import Inbox from "./pages/Inbox";
 
 
 function Router() {
@@ -24,6 +25,7 @@ function Router() {
       <Route path={"/lead-search"} component={LeadSearch} />
       <Route path={"/company-lead-search"} component={CompanyLeadSearch} />
       <Route path={"/outreach"} component={Outreach} />
+      <Route path={"/inbox"} component={Inbox} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

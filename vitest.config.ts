@@ -9,7 +9,7 @@ export default defineConfig({
     },
   },
   test: {
-    include: ["server/**/*.test.ts", "client/**/*.test.ts", "client/**/*.test.tsx"],
+    include: ["server/**/*.test.ts", "client/**/*.test.ts", "client/**/*.test.tsx", "shared/**/*.test.ts"],
     environment: "node",
   },
 });

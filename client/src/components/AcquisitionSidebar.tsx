@@ -2,6 +2,7 @@ import {
   ArrowLeft,
   BarChart3,
   Building2,
+  Inbox,
   Mail,
   Menu,
   Search,
@@ -48,6 +49,7 @@ export default function AcquisitionSidebar({ activeMode, expanded, onToggle, onN
         ))}
         <button onClick={() => onNavigate("/dashboard")} className={`${expanded ? "justify-start px-3" : "justify-center px-2"} w-full flex items-center gap-3 py-2.5 rounded-lg text-left text-xs text-slate-500 hover:bg-slate-800/70 hover:text-slate-200`}><Users className="w-4 h-4 shrink-0" />{expanded && <span>Leads</span>}</button>
         <button onClick={() => onNavigate("/outreach")} className={`${expanded ? "justify-start px-3" : "justify-center px-2"} w-full flex items-center gap-3 py-2.5 rounded-lg text-left text-xs text-slate-500 hover:bg-slate-800/70 hover:text-slate-200`}><Mail className="w-4 h-4 shrink-0" />{expanded && <span>Outreach</span>}</button>
+        <button onClick={() => onNavigate("/inbox")} className={`${expanded ? "justify-start px-3" : "justify-center px-2"} w-full flex items-center gap-3 py-2.5 rounded-lg text-left text-xs text-slate-500 hover:bg-slate-800/70 hover:text-slate-200`}><Inbox className="w-4 h-4 shrink-0" />{expanded && <span>Inbox</span>}</button>
         <button className={`${expanded ? "justify-start px-3" : "justify-center px-2"} w-full flex items-center gap-3 py-2.5 rounded-lg text-left text-xs text-slate-500 hover:bg-slate-800/70 hover:text-slate-200`}><Target className="w-4 h-4 shrink-0" />{expanded && <span>Opportunities</span>}</button>
         <button className={`${expanded ? "justify-start px-3" : "justify-center px-2"} w-full flex items-center gap-3 py-2.5 rounded-lg text-left text-xs text-slate-500 hover:bg-slate-800/70 hover:text-slate-200`}><BarChart3 className="w-4 h-4 shrink-0" />{expanded && <span>Reports</span>}</button>
         <button onClick={() => onNavigate("/settings")} className={`${expanded ? "justify-start px-3" : "justify-center px-2"} w-full flex items-center gap-3 py-2.5 rounded-lg text-left text-xs text-slate-500 hover:bg-slate-800/70 hover:text-slate-200`}><Settings className="w-4 h-4 shrink-0" />{expanded && <span>Settings</span>}</button>
